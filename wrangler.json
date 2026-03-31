@@ -1,15 +1,11 @@
 {
-	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "an-dang-landing-page",
-	"main": "./src/worker/index.ts",
-	"compatibility_date": "2025-10-08",
-	"compatibility_flags": ["nodejs_compat"],
-	"observability": {
-		"enabled": true
-	},
-	"upload_source_maps": true,
-	"assets": {
-		"directory": "./dist/client",
-		"not_found_handling": "single-page-application"
-	}
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "an-dang-landing-page",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-03-31",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  }
 }

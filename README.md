@@ -1,90 +1,109 @@
-# React + Vite + Hono + Cloudflare Workers
+# An Đăng Landing Page
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/templates/tree/main/vite-react-template)
+Landing page song ngữ Việt/Anh cho **Công ty TNHH Công nghệ Quốc tế An Đăng**, xây bằng:
 
-This template provides a minimal setup for building a React application with TypeScript and Vite, designed to run on Cloudflare Workers. It features hot module replacement, ESLint integration, and the flexibility of Workers deployments.
+- Vite + React + TypeScript
+- Hono API
+- Cloudflare Workers
+- Supabase Database + Auth + Storage
+- TailwindCSS + Framer Motion
 
-![React + TypeScript + Vite + Cloudflare Workers](https://imagedelivery.net/wSMYJvS3Xw-n339CbDyDIA/fc7b4b62-442b-4769-641b-ad4422d74300/public)
+## Tính năng chính
 
-<!-- dash-content-start -->
+- Landing page hoàn chỉnh, responsive desktop / tablet / mobile
+- Tone giao diện sang trọng, hiện đại, công nghệ
+- Admin CMS đăng nhập bằng Supabase Auth
+- CRUD cho bài viết, dịch vụ, feedback, FAQ
+- CMS đầy đủ hơn cho:
+  - Hero
+  - About
+  - Footer
+  - thông tin liên hệ
+  - logo doanh nghiệp
+- Upload logo và ảnh cover bài viết bằng **Supabase Storage** (`site-assets` bucket)
+- Form lead và đặt lịch tư vấn qua Hono API
+- Seed dữ liệu thực tế theo hồ sơ công ty An Đăng
 
-🚀 Supercharge your web development with this powerful stack:
-
-- [**React**](https://react.dev/) - A modern UI library for building interactive interfaces
-- [**Vite**](https://vite.dev/) - Lightning-fast build tooling and development server
-- [**Hono**](https://hono.dev/) - Ultralight, modern backend framework
-- [**Cloudflare Workers**](https://developers.cloudflare.com/workers/) - Edge computing platform for global deployment
-
-### ✨ Key Features
-
-- 🔥 Hot Module Replacement (HMR) for rapid development
-- 📦 TypeScript support out of the box
-- 🛠️ ESLint configuration included
-- ⚡ Zero-config deployment to Cloudflare's global network
-- 🎯 API routes with Hono's elegant routing
-- 🔄 Full-stack development setup
-- 🔎 Built-in Observability to monitor your Worker
-
-Get started in minutes with local development or deploy directly via the Cloudflare dashboard. Perfect for building modern, performant web applications at the edge.
-
-<!-- dash-content-end -->
-
-## Getting Started
-
-To start a new project with this template, run:
-
-```bash
-npm create cloudflare@latest -- --template=cloudflare/templates/vite-react-template
-```
-
-A live deployment of this template is available at:
-[https://react-vite-template.templates.workers.dev](https://react-vite-template.templates.workers.dev)
-
-## Development
-
-Install dependencies:
+## Cài đặt local
 
 ```bash
 npm install
-```
-
-Start the development server with:
-
-```bash
+cp .env.example .env
 npm run dev
 ```
 
-Your application will be available at [http://localhost:5173](http://localhost:5173).
+## Biến môi trường
 
-## Production
+Điền vào `.env`:
 
-Build your project for production:
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+## Supabase setup
+
+### 1. Chạy schema
+
+Mở SQL Editor của Supabase và chạy file:
+
+```sql
+supabase/schema.sql
+```
+
+Schema này sẽ tạo:
+
+- `site_settings`
+- `services`
+- `testimonials`
+- `faqs`
+- `posts`
+- `jobs`
+- `leads`
+- `bookings`
+- `profiles`
+- storage bucket `site-assets`
+- RLS policies cho public read + admin manage
+
+### 2. Tạo user admin
+
+- Vào **Authentication > Users** tạo tài khoản admin
+- Lấy `uuid` user đó rồi insert vào bảng `profiles`
+
+Ví dụ:
+
+```sql
+insert into public.profiles (id, full_name, role)
+values ('YOUR_AUTH_USER_ID', 'Admin An Dang', 'admin')
+on conflict (id) do update set role = 'admin';
+```
+
+### 3. Upload logo / ảnh bài viết
+
+- Đăng nhập `/admin`
+- Tab **Site settings** để upload logo
+- Tab **Posts** để upload ảnh cover bài viết
+
+## Chạy Cloudflare
 
 ```bash
 npm run build
+npm run cf:dev
+npm run cf:deploy
 ```
 
-Preview your build locally:
+## Cấu trúc đáng chú ý
 
-```bash
-npm run preview
-```
+- `src/pages/AdminPage.tsx`: CMS admin
+- `src/hooks/usePublicContent.ts`: tải dữ liệu public từ Supabase
+- `src/lib/storage.ts`: helper upload Supabase Storage
+- `src/sections/HeroSection.tsx`: hero dùng dữ liệu CMS
+- `src/sections/AboutSection.tsx`: about dùng dữ liệu CMS
+- `src/components/Footer.tsx`: footer dùng dữ liệu CMS
+- `supabase/schema.sql`: database + storage + seed
 
-Deploy your project to Cloudflare Workers:
+## Ghi chú
 
-```bash
-npm run build && npm run deploy
-```
-
-Monitor your workers:
-
-```bash
-npx wrangler tail
-```
-
-## Additional Resources
-
-- [Cloudflare Workers Documentation](https://developers.cloudflare.com/workers/)
-- [Vite Documentation](https://vitejs.dev/guide/)
-- [React Documentation](https://reactjs.org/)
-- [Hono Documentation](https://hono.dev/)
+- Project đang dùng `HashRouter` để deploy tĩnh / Cloudflare dễ hơn.
+- Nếu bạn có logo thật, chỉ cần vào admin upload logo là giao diện sẽ đổi ngay.
+- Nếu muốn, bạn có thể mở rộng tiếp để quản trị cả Projects, Benefits, Careers hoặc đa ngôn ngữ sâu hơn theo từng block.
