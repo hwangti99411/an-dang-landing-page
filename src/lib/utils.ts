@@ -8,5 +8,5 @@ export const formatDate = (value: string, locale: Locale) =>
   new Intl.DateTimeFormat(locale === 'vi' ? 'vi-VN' : 'en-US', {
     day: '2-digit',
     month: 'short',
-    year: 'numeric'
+    year: 'numeric',
   }).format(new Date(value));

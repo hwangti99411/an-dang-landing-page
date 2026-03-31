@@ -4,7 +4,7 @@ export function SectionHeading({
   eyebrow,
   title,
   description,
-  align = 'left'
+  align = 'left',
 }: {
   eyebrow: string;
   title: string;

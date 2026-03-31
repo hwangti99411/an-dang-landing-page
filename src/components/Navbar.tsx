@@ -13,7 +13,7 @@ const navItems = {
     ['projects', 'Dự án'],
     ['news', 'Tin tức'],
     ['careers', 'Tuyển dụng'],
-    ['contact', 'Liên hệ']
+    ['contact', 'Liên hệ'],
   ],
   en: [
     ['about', 'About'],
@@ -21,8 +21,8 @@ const navItems = {
     ['projects', 'Projects'],
     ['news', 'News'],
     ['careers', 'Careers'],
-    ['contact', 'Contact']
-  ]
+    ['contact', 'Contact'],
+  ],
 } as const;
 
 export function Navbar({ settings }: { settings: SiteSettings }) {
@@ -51,17 +51,17 @@ export function Navbar({ settings }: { settings: SiteSettings }) {
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#100406]/80 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
         <Link
-  to="/"
-  className="flex items-center gap-3"
-  onClick={(e) => {
-    if (window.location.pathname === '/') {
-      e.preventDefault();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }}
->
-  <BrandLogo settings={settings} />
-</Link>
+          to="/"
+          className="flex items-center gap-3"
+          onClick={(e) => {
+            if (window.location.pathname === '/') {
+              e.preventDefault();
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+          }}
+        >
+          <BrandLogo settings={settings} />
+        </Link>
 
         <nav className="hidden items-center gap-6 lg:flex">
           {navItems[locale].map(([id, label]) => (
@@ -108,10 +108,10 @@ export function Navbar({ settings }: { settings: SiteSettings }) {
                 {label}
               </button>
             ))}
-            <Link to="/admin" className="text-sm text-white/80" onClick={() => setOpen(false)}>
+            {/* <Link to="/admin" className="text-sm text-white/80" onClick={() => setOpen(false)}>
               Admin
-            </Link>
-            <div className="pt-2">
+            </Link> */}
+            <div className="pt-2 w-24">
               <LanguageToggle />
             </div>
           </div>

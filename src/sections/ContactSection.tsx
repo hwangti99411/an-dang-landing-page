@@ -59,7 +59,7 @@ export function ContactSection({ settings }: { settings: SiteSettings }) {
       throw new Error(
         typeof data === 'object' && data && 'message' in data
           ? String((data as { message?: string }).message || 'Request failed')
-          : `Request failed with status ${res.status}`
+          : `Request failed with status ${res.status}`,
       );
     }
 
@@ -88,8 +88,8 @@ export function ContactSection({ settings }: { settings: SiteSettings }) {
         error instanceof Error
           ? error.message
           : locale === 'vi'
-          ? 'Gửi thất bại, vui lòng kiểm tra cấu hình API.'
-          : 'Submission failed. Please verify API configuration.'
+            ? 'Gửi thất bại, vui lòng kiểm tra cấu hình API.'
+            : 'Submission failed. Please verify API configuration.',
       );
     }
   };
@@ -101,9 +101,7 @@ export function ContactSection({ settings }: { settings: SiteSettings }) {
     try {
       await postJson(`${API_BASE}/booking`, { ...booking, locale });
       setStatus(
-        locale === 'vi'
-          ? 'Đặt lịch tư vấn thành công.'
-          : 'Consultation booked successfully.'
+        locale === 'vi' ? 'Đặt lịch tư vấn thành công.' : 'Consultation booked successfully.',
       );
       setBooking({
         name: '',
@@ -121,8 +119,8 @@ export function ContactSection({ settings }: { settings: SiteSettings }) {
         error instanceof Error
           ? error.message
           : locale === 'vi'
-          ? 'Đặt lịch thất bại, vui lòng kiểm tra cấu hình API.'
-          : 'Booking failed. Please verify API configuration.'
+            ? 'Đặt lịch thất bại, vui lòng kiểm tra cấu hình API.'
+            : 'Booking failed. Please verify API configuration.',
       );
     }
   };
@@ -202,7 +200,9 @@ export function ContactSection({ settings }: { settings: SiteSettings }) {
               />
               <textarea
                 className="input min-h-28"
-                placeholder={locale === 'vi' ? 'Mô tả ngắn nhu cầu của bạn' : 'Tell us about your needs'}
+                placeholder={
+                  locale === 'vi' ? 'Mô tả ngắn nhu cầu của bạn' : 'Tell us about your needs'
+                }
                 value={lead.message}
                 onChange={(e) => setLead({ ...lead, message: e.target.value })}
                 required
@@ -264,7 +264,9 @@ export function ContactSection({ settings }: { settings: SiteSettings }) {
               />
               <textarea
                 className="input min-h-28"
-                placeholder={locale === 'vi' ? 'Nội dung cần trao đổi' : 'What would you like to discuss?'}
+                placeholder={
+                  locale === 'vi' ? 'Nội dung cần trao đổi' : 'What would you like to discuss?'
+                }
                 value={booking.message}
                 onChange={(e) => setBooking({ ...booking, message: e.target.value })}
                 required

@@ -4,12 +4,12 @@
   "main": "src/worker.ts",
   "compatibility_date": "2025-01-01",
   "assets": {
-    "directory": "./dist"
+    "directory": "./dist",
   },
   "observability": {
-    "enabled": true
+    "enabled": true,
   },
   "vars": {
-    "VITE_COMPANY_NAME": "Công ty TNHH Công nghệ Quốc tế An Đăng"
-  }
+    "VITE_COMPANY_NAME": "Công ty TNHH Công nghệ Quốc tế An Đăng",
+  },
 }

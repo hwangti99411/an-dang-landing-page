@@ -13,7 +13,7 @@ export function LanguageToggle() {
           onClick={() => setLocale(item)}
           className={cn(
             'rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] transition',
-            locale === item ? 'bg-brand-gold text-brand-dark' : 'text-white/65 hover:text-white'
+            locale === item ? 'bg-brand-gold text-brand-dark' : 'text-white/65 hover:text-white',
           )}
         >
           {item}

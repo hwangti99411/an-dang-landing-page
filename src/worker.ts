@@ -39,18 +39,22 @@ const app = new Hono<{ Bindings: Bindings }>();
 app.use(
   '/api/*',
   cors({
-    origin: ['http://localhost:5173', 'http://127.0.0.1:5173','https://tech.andanggroup.com',
+    origin: [
+      'http://localhost:5173',
+      'http://127.0.0.1:5173',
+      'https://tech.andanggroup.com',
       'https://andanggroup.com',
-      'https://www.andanggroup.com'],
+      'https://www.andanggroup.com',
+    ],
     allowMethods: ['GET', 'POST', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
-  })
+  }),
 );
 
 async function saveToSupabase(
   env: Bindings,
   table: 'leads' | 'bookings',
-  payload: Record<string, unknown>
+  payload: Record<string, unknown>,
 ) {
   const response = await fetch(`${env.SUPABASE_URL}/rest/v1/${table}`, {
     method: 'POST',
@@ -115,7 +119,7 @@ async function sendTelegram(env: Bindings, message: string) {
         chat_id: env.TELEGRAM_CHAT_ID,
         text: message,
       }),
-    }
+    },
   );
 
   if (!response.ok) {
@@ -158,7 +162,7 @@ app.post('/api/lead', async (c) => {
         `Công ty: ${body.company ?? ''}`,
         `Dịch vụ quan tâm: ${body.service_interest ?? ''}`,
         `Nội dung: ${body.message ?? ''}`,
-      ].join('\n')
+      ].join('\n'),
     );
   } catch (error) {
     console.error('Telegram error:', error);
@@ -206,7 +210,7 @@ app.post('/api/booking', async (c) => {
         `Dịch vụ quan tâm: ${body.service_interest ?? ''}`,
         `Thời gian mong muốn: ${body.schedule_at ?? ''}`,
         `Nội dung: ${body.message ?? ''}`,
-      ].join('\n')
+      ].join('\n'),
     );
   } catch (error) {
     console.error('Telegram error:', error);

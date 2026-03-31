@@ -1,6 +1,12 @@
 import type { SiteSettings } from '@/types';
 
-export function BrandLogo({ settings, compact = false }: { settings: SiteSettings; compact?: boolean }) {
+export function BrandLogo({
+  settings,
+  compact = false,
+}: {
+  settings: SiteSettings;
+  compact?: boolean;
+}) {
   const name = settings.brand_name || 'An Đăng';
 
   if (settings.logo_url) {
@@ -9,7 +15,9 @@ export function BrandLogo({ settings, compact = false }: { settings: SiteSetting
         <img
           src={settings.logo_url}
           alt={name}
-          className={compact ? 'h-10 w-10 rounded-2xl object-cover' : 'h-12 w-12 rounded-2xl object-cover'}
+          className={
+            compact ? 'h-10 w-10 rounded-2xl object-cover' : 'h-12 w-12 rounded-2xl object-cover'
+          }
         />
         <div>
           <div className="text-xs uppercase tracking-[0.35em] text-brand-gold">{name}</div>

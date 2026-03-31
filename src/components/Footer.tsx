@@ -17,10 +17,46 @@ export function Footer({ settings }: { settings: SiteSettings }) {
         <div>
           <h4 className="text-sm font-semibold uppercase tracking-[0.2em] text-white">Menu</h4>
           <div className="mt-4 space-y-3 text-sm text-white/65">
-            <a href="#about" className="block">{locale === 'vi' ? 'Giới thiệu' : 'About'}</a>
-            <a href="#services" className="block">{locale === 'vi' ? 'Dịch vụ' : 'Services'}</a>
-            <a href="#news" className="block">{locale === 'vi' ? 'Tin tức' : 'News'}</a>
-            <a href="#contact" className="block">{locale === 'vi' ? 'Liên hệ' : 'Contact'}</a>
+            <a
+              onClick={() => {
+                document.getElementById('about')?.scrollIntoView({
+                  behavior: 'smooth',
+                });
+              }}
+              className="gap-2 block cursor-pointer"
+            >
+              {locale === 'vi' ? 'Giới thiệu' : 'About'}
+            </a>
+            <a
+              onClick={() => {
+                document.getElementById('services')?.scrollIntoView({
+                  behavior: 'smooth',
+                });
+              }}
+              className="gap-2 block cursor-pointer"
+            >
+              {locale === 'vi' ? 'Dịch vụ' : 'Services'}
+            </a>
+            <a
+              onClick={() => {
+                document.getElementById('news')?.scrollIntoView({
+                  behavior: 'smooth',
+                });
+              }}
+              className="gap-2 block cursor-pointer"
+            >
+              {locale === 'vi' ? 'Tin tức' : 'News'}
+            </a>
+            <a
+              onClick={() => {
+                document.getElementById('contact')?.scrollIntoView({
+                  behavior: 'smooth',
+                });
+              }}
+              className="gap-2 block cursor-pointer"
+            >
+              {locale === 'vi' ? 'Liên hệ' : 'Contact'}
+            </a>
           </div>
         </div>
         <div>
