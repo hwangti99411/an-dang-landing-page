@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import {
   ImagePlus,
   LoaderCircle,
@@ -11,11 +11,18 @@ import {
 } from 'lucide-react';
 import { fallbackSiteSettings } from '@/data/fallback';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { uploadPublicFile } from '@/lib/storage';
+import { uploadPublicFile, uploadJobFile, deleteJobFile } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
-import type { FaqItem, PostItem, ServiceItem, SiteSettings, TestimonialItem } from '@/types';
+import type {
+  FaqItem,
+  JobItem,
+  PostItem,
+  ServiceItem,
+  SiteSettings,
+  TestimonialItem,
+} from '@/types';
 
-type CollectionTab = 'posts' | 'services' | 'testimonials' | 'faqs';
+type CollectionTab = 'posts' | 'services' | 'testimonials' | 'faqs' | 'jobs';
 type AdminTab = 'site' | CollectionTab;
 type AdminRow = Record<string, string | boolean | null> & { id?: string | number };
 
@@ -25,6 +32,7 @@ const tabLabels: Record<AdminTab, { vi: string; en: string }> = {
   services: { vi: 'Dịch vụ', en: 'Services' },
   testimonials: { vi: 'Feedback', en: 'Testimonials' },
   faqs: { vi: 'FAQ', en: 'FAQs' },
+  jobs: { vi: 'Tuyển dụng', en: 'Jobs' },
 };
 
 const defaultRows: Record<CollectionTab, AdminRow> = {
@@ -45,6 +53,20 @@ const defaultRows: Record<CollectionTab, AdminRow> = {
   services: { icon: 'Code2', title_vi: '', title_en: '', description_vi: '', description_en: '' },
   testimonials: { name: '', role_vi: '', role_en: '', company: '', quote_vi: '', quote_en: '' },
   faqs: { question_vi: '', question_en: '', answer_vi: '', answer_en: '' },
+  jobs: {
+    title_vi: '',
+    title_en: '',
+    location_vi: '',
+    location_en: '',
+    type_vi: '',
+    type_en: '',
+    description_vi: '',
+    description_en: '',
+    is_active: true,
+    jd_file_url: '',
+    jd_file_path: '',
+    apply_url: '',
+  },
 };
 
 const largeFieldHints = ['content', 'description', 'quote', 'answer', 'summary'];
@@ -68,13 +90,26 @@ export function AdminPage() {
     services: [],
     testimonials: [],
     faqs: [],
+    jobs: [],
   });
   const [draft, setDraft] = useState<AdminRow>(defaultRows.posts);
   const [siteDraft, setSiteDraft] = useState<SiteSettings>(fallbackSiteSettings);
-  const collectionColumns = useMemo(
-    () => (activeTab === 'site' ? [] : Object.keys(defaultRows[activeTab])),
-    [activeTab],
-  );
+
+  const jobFileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const collectionColumns = useMemo(() => {
+    if (activeTab === 'site') return [];
+
+    const columns = Object.keys(defaultRows[activeTab]);
+
+    if (activeTab === 'jobs') {
+      return columns.filter(
+        (column) => column !== 'jd_file_url' && column !== 'jd_file_path' && column !== 'apply_url',
+      );
+    }
+
+    return columns;
+  }, [activeTab]);
 
   function getErrorMessage(error: unknown) {
     if (error instanceof Error) return error.message;
@@ -133,6 +168,7 @@ export function AdminPage() {
       loadTable('services'),
       loadTable('testimonials'),
       loadTable('faqs'),
+      loadTable('jobs'),
     ]);
   }
 
@@ -191,6 +227,9 @@ export function AdminPage() {
 
     setMessage(locale === 'vi' ? 'Lưu thành công.' : 'Saved successfully.');
     setDraft(defaultRows[table]);
+    if (activeTab === 'jobs' && jobFileInputRef.current) {
+      jobFileInputRef.current.value = '';
+    }
     await loadTable(table);
   };
 
@@ -232,6 +271,66 @@ export function AdminPage() {
       setMessage(locale === 'vi' ? 'Upload ảnh thành công.' : 'Image uploaded successfully.');
     } catch (error) {
       setMessage(getErrorMessage(error));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const uploadJobAsset = async (file: File) => {
+    try {
+      setMessage(locale === 'vi' ? 'Đang upload JD...' : 'Uploading JD...');
+
+      const oldPath = String(draft.jd_file_path ?? '');
+      if (oldPath) {
+        try {
+          await deleteJobFile(oldPath);
+        } catch {
+          // bỏ qua nếu file cũ xoá lỗi
+        }
+      }
+
+      const uploaded = await uploadJobFile(file);
+
+      setDraft((prev: any) => ({
+        ...prev,
+        jd_file_url: uploaded.publicUrl,
+        jd_file_path: uploaded.path,
+      }));
+
+      setMessage(locale === 'vi' ? 'Upload JD thành công.' : 'JD uploaded successfully.');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Upload failed');
+    }
+  };
+
+  const removeJobAsset = async () => {
+    try {
+      const path = String(draft.jd_file_path ?? '');
+
+      if (!path) {
+        setMessage(locale === 'vi' ? 'Không có file để xoá.' : 'No file to delete.');
+        if (jobFileInputRef.current) {
+          jobFileInputRef.current.value = '';
+        }
+        return;
+      }
+
+      setBusy(true);
+      await deleteJobFile(path);
+
+      setDraft((prev: any) => ({
+        ...prev,
+        jd_file_url: '',
+        jd_file_path: '',
+      }));
+
+      if (jobFileInputRef.current) {
+        jobFileInputRef.current.value = '';
+      }
+
+      setMessage(locale === 'vi' ? 'Đã xoá file JD.' : 'JD file deleted.');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Delete failed');
     } finally {
       setBusy(false);
     }
@@ -447,6 +546,7 @@ export function AdminPage() {
                     )}
                   </div>
                 ))}
+
                 {activeTab === 'posts' && (
                   <label className="btn-secondary inline-flex cursor-pointer gap-2">
                     <ImagePlus size={16} />
@@ -461,6 +561,59 @@ export function AdminPage() {
                     />
                   </label>
                 )}
+
+                {activeTab === 'jobs' && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="mb-2 block text-sm text-white/70">JD file (PDF/DOCX)</label>
+                      <input
+                        ref={jobFileInputRef}
+                        type="file"
+                        accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) void uploadJobAsset(file);
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm text-white/70">JD file URL</label>
+                      <input
+                        className="input"
+                        disabled
+                        value={String(draft.jd_file_url ?? '')}
+                        onChange={(e) =>
+                          setDraft((prev: any) => ({ ...prev, jd_file_url: e.target.value }))
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm text-white/70">Apply URL</label>
+                      <input
+                        className="input"
+                        disabled
+                        value={String(draft.apply_url ?? '')}
+                        onChange={(e) =>
+                          setDraft((prev: any) => ({ ...prev, apply_url: e.target.value }))
+                        }
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap gap-3">
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        onClick={() => void removeJobAsset()}
+                        disabled={busy || !draft.jd_file_path}
+                      >
+                        {locale === 'vi' ? 'Xoá file JD' : 'Delete JD file'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex flex-wrap gap-3 pt-2">
                   <button className="btn-primary gap-2" disabled={busy}>
                     {busy ? (
@@ -479,7 +632,12 @@ export function AdminPage() {
                   <button
                     type="button"
                     className="btn-secondary"
-                    onClick={() => setDraft(defaultRows[activeTab])}
+                    onClick={() => {
+                      setDraft(defaultRows[activeTab]);
+                      if (activeTab === 'jobs' && jobFileInputRef.current) {
+                        jobFileInputRef.current.value = '';
+                      }
+                    }}
                   >
                     {locale === 'vi' ? 'Làm mới form' : 'Reset form'}
                   </button>

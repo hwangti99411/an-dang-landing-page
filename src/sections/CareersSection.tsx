@@ -7,6 +7,40 @@ import type { JobItem } from '@/types';
 export function CareersSection({ jobs }: { jobs: JobItem[] }) {
   const { locale } = useLanguage();
 
+  const downloadFile = async (url: string, fileName: string) => {
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = fileName;
+
+      document.body.appendChild(a);
+      a.click();
+
+      a.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error('Download failed', err);
+    }
+  };
+
+  const normalizeFileName = (str: string) => {
+    return str
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // bỏ dấu tiếng Việt
+      .replace(/[^a-z0-9]+/g, '-') // thay ký tự đặc biệt
+      .replace(/(^-|-$)/g, ''); // trim dấu -
+  };
+
+  const getExtension = (url: string) => {
+    return url.split('.').pop()?.split('?')[0] || 'file';
+  };
+
   return (
     <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8" id="careers">
       <SectionHeading
@@ -53,9 +87,25 @@ export function CareersSection({ jobs }: { jobs: JobItem[] }) {
             <p className="mt-4 text-sm leading-7 text-white/70">
               {locale === 'vi' ? job.description_vi : job.description_en}
             </p>
-            <a href="#contact" className="mt-6 inline-flex text-sm font-medium text-brand-gold">
+            <button
+              type="button"
+              onClick={() => {
+                if (!job.jd_file_url) return;
+
+                const title = locale === 'vi' ? job.title_vi : job.title_en;
+
+                const ext = getExtension(job.jd_file_url);
+
+                const fileName = `${normalizeFileName(title)}-job-AnDangTech.${ext}`;
+
+                downloadFile(job.jd_file_url, fileName);
+              }}
+              className={`mt-6 inline-flex text-sm font-medium ${
+                job.jd_file_url ? 'text-brand-gold' : 'cursor-not-allowed text-white/35'
+              }`}
+            >
               {locale === 'vi' ? 'Ứng tuyển / nhận JD' : 'Apply / request JD'}
-            </a>
+            </button>
           </motion.article>
         ))}
       </div>

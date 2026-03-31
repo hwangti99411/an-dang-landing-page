@@ -120,3 +120,20 @@ export interface Env {
   TELEGRAM_BOT_TOKEN?: string;
   TELEGRAM_CHAT_ID?: string;
 }
+
+export interface JobItem {
+  id: string;
+  title_vi: string;
+  title_en: string;
+  location_vi: string;
+  location_en: string;
+  type_vi: string;
+  type_en: string;
+  description_vi: string;
+  description_en: string;
+  is_active: boolean;
+  created_at?: string;
+  jd_file_url?: string;
+  jd_file_path?: string;
+  apply_url?: string;
+}
