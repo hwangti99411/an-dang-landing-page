@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
 import { CalendarClock, Mail, MapPin, Phone } from 'lucide-react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { format, parseISO, isValid } from 'date-fns';
 import { SectionHeading } from '@/components/SectionHeading';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { BookingPayload, LeadPayload, SiteSettings } from '@/types';
@@ -255,13 +258,35 @@ export function ContactSection({ settings }: { settings: SiteSettings }) {
                 value={booking.service_interest}
                 onChange={(e) => setBooking({ ...booking, service_interest: e.target.value })}
               />
-              <input
-                className="input"
-                type="datetime-local"
-                value={booking.schedule_at}
-                onChange={(e) => setBooking({ ...booking, schedule_at: e.target.value })}
-                required
-              />
+              <div className="datepicker-wrapper">
+                <DatePicker
+                  selected={
+                    booking.schedule_at
+                      ? (() => {
+                          const parsed = parseISO(booking.schedule_at);
+                          return isValid(parsed) ? parsed : null;
+                        })()
+                      : null
+                  }
+                  onChange={(date: any) =>
+                    setBooking({
+                      ...booking,
+                      schedule_at: date ? format(date, "yyyy-MM-dd'T'HH:mm:ss") : '',
+                    })
+                  }
+                  showTimeSelect
+                  timeIntervals={30}
+                  dateFormat="dd/MM/yyyy HH:mm"
+                  placeholderText={locale === 'vi' ? 'Chọn ngày giờ' : 'Select date and time'}
+                  calendarClassName="booking-datepicker"
+                  popperClassName="booking-datepicker-popper"
+                  wrapperClassName="datepicker-full"
+                  className="input w-full"
+                  popperPlacement="bottom"
+                  portalId="root"
+                  required
+                />
+              </div>
               <textarea
                 className="input min-h-28"
                 placeholder={
