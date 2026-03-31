@@ -74,9 +74,9 @@ export function Navbar({ settings }: { settings: SiteSettings }) {
               {label}
             </button>
           ))}
-          <Link to="/admin" className="text-sm text-white/70 transition hover:text-white">
+          {/* <Link to="/admin" className="text-sm text-white/70 transition hover:text-white">
             Admin
-          </Link>
+          </Link> */}
         </nav>
 
         <div className="hidden items-center gap-3 lg:flex">
