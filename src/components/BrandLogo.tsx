@@ -1,4 +1,5 @@
 import type { SiteSettings } from '@/types';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export function BrandLogo({
   settings,
@@ -7,6 +8,7 @@ export function BrandLogo({
   settings: SiteSettings;
   compact?: boolean;
 }) {
+  const { locale } = useLanguage();
   const name = settings.brand_name || 'An Đăng';
 
   if (settings.logo_url) {
@@ -21,7 +23,9 @@ export function BrandLogo({
         />
         <div>
           <div className="text-xs uppercase tracking-[0.35em] text-brand-gold">{name}</div>
-          <div className="text-sm font-semibold text-white/90">{settings.company_name_en}</div>
+          <div className="text-sm font-semibold text-white/90">
+            {locale === 'vi' ? settings.company_name_vi : settings.company_name_en}
+          </div>
         </div>
       </div>
     );
