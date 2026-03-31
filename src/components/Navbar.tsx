@@ -125,7 +125,7 @@ export function Navbar({ settings }: { settings: SiteSettings }) {
             {/* <Link to="/admin" className="text-sm text-white/80" onClick={() => setOpen(false)}>
               Admin
             </Link> */}
-            <div className="pt-2 w-24">
+            <div className="pt-2 w-[98px]">
               <LanguageToggle />
             </div>
           </div>
