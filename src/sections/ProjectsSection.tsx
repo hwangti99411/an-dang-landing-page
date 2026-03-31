@@ -51,9 +51,7 @@ export function ProjectsSection() {
             : 'A few representative delivery models.'
         }
         description={
-          locale === 'vi'
-            ? 'Bạn có thể thay toàn bộ phần này bằng case study thực tế, logo khách hàng hoặc dự án tiêu biểu sau khi go-live.'
-            : 'This section can be replaced later with actual case studies, client logos, or flagship projects after launch.'
+          ""
         }
       />
       <div className="mt-10 grid gap-5 lg:grid-cols-3">

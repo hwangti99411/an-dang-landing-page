@@ -17,9 +17,7 @@ export function TestimonialsSection({ testimonials }: { testimonials: Testimonia
             : 'Clients find confidence in every stage of delivery.'
         }
         description={
-          locale === 'vi'
-            ? 'Một vài nội dung mẫu để bạn thay bằng feedback thật từ khách hàng, đối tác hoặc ứng viên.'
-            : 'Sample references you can replace with real feedback from clients, partners, or candidates.'
+          ""
         }
         align="center"
       />

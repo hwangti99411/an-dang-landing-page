@@ -62,9 +62,9 @@ export function Footer({ settings }: { settings: SiteSettings }) {
         <div>
           <h4 className="text-sm font-semibold uppercase tracking-[0.2em] text-white">Contact</h4>
           <div className="mt-4 space-y-3 text-sm text-white/65">
-            <div>{settings.phone}</div>
-            <div>{settings.email}</div>
-            <div>{locale === 'vi' ? settings.address_vi : settings.address_en}</div>
+            <div>{locale === 'vi' ? 'SĐT': 'Phone'}: {settings.phone}</div>
+            <div>Email: {settings.email}</div>
+            <div>{locale === 'vi' ? 'Địa chỉ': 'Address'}: {locale === 'vi' ? settings.address_vi : settings.address_en}</div>
           </div>
         </div>
       </div>

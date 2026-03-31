@@ -19,9 +19,7 @@ export function FaqSection({ faqs }: { faqs: FaqItem[] }) {
             : 'Questions clients ask before getting started.'
         }
         description={
-          locale === 'vi'
-            ? 'Bạn có thể chỉnh sửa câu hỏi và câu trả lời trong trang admin hoặc trực tiếp trên Supabase.'
-            : 'You can update these questions and answers from the admin dashboard or directly in Supabase.'
+         ""
         }
         align="center"
       />

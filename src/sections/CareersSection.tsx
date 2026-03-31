@@ -51,9 +51,7 @@ export function CareersSection({ jobs }: { jobs: JobItem[] }) {
             : 'Join a technology team that moves with ambition.'
         }
         description={
-          locale === 'vi'
-            ? 'Section này phù hợp để đăng tin tuyển dụng, thông tin văn hóa công ty và CTA nhận CV.'
-            : 'Use this area for active openings, employer branding, and candidate calls-to-action.'
+          ""
         }
       />
       <div className="mt-10 grid gap-5 md:grid-cols-2">

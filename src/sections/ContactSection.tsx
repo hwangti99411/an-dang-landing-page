@@ -140,9 +140,7 @@ export function ContactSection({ settings }: { settings: SiteSettings }) {
                 : 'Share your needs, receive a proposal, and book a consultation.'
             }
             description={
-              locale === 'vi'
-                ? 'Form đã kết nối sẵn với Hono API để lưu lead, đặt lịch và mở rộng tích hợp với Formspree, Web3Forms hoặc API riêng.'
-                : 'The forms are already connected to the Hono API for leads and bookings, and can be extended to Formspree, Web3Forms, or a custom API.'
+            ''
             }
           />
           <div className="mt-8 space-y-4 text-sm text-white/72">

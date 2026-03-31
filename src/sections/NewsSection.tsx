@@ -19,9 +19,7 @@ export function NewsSection({ posts }: { posts: PostItem[] }) {
             : 'Company updates, technology insights, and hiring announcements.'
         }
         description={
-          locale === 'vi'
-            ? 'Danh sách bài viết lấy từ Supabase. Hỗ trợ upload ảnh cover qua Supabase Storage ngay trong admin.'
-            : 'Posts are loaded from Supabase. Cover images can be uploaded directly through Supabase Storage in the admin panel.'
+          ""
         }
       />
       <div className="mt-10 grid gap-5 lg:grid-cols-3">
