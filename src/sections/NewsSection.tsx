@@ -60,6 +60,7 @@ export function NewsSection({ posts }: { posts: PostItem[] }) {
               </p>
               <Link
                 to={`/news/${post.slug}`}
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                 className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-brand-gold"
               >
                 {locale === 'vi' ? 'Xem chi tiết' : 'Read more'}

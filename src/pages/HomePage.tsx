@@ -11,9 +11,24 @@ import { NewsSection } from '@/sections/NewsSection';
 import { ProjectsSection } from '@/sections/ProjectsSection';
 import { ServicesSection } from '@/sections/ServicesSection';
 import { TestimonialsSection } from '@/sections/TestimonialsSection';
+import { useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 
 export function HomePage() {
   const { settings, services, testimonials, faqs, posts, jobs } = usePublicContent();
+
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.scrollTo) {
+      const el = document.getElementById(location.state.scrollTo);
+      if (el) {
+        setTimeout(() => {
+          el.scrollIntoView({ behavior: 'smooth' });
+        }, 100); // delay để đảm bảo DOM render xong
+      }
+    }
+  }, [location]);
 
   return (
     <div>

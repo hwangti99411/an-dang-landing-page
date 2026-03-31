@@ -31,24 +31,38 @@ export function Navbar({ settings }: { settings: SiteSettings }) {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const scrollToSection = async (id: string) => {
+  const scrollToSection = (id: string) => {
     setOpen(false);
+
+    const scrollWithOffset = () => {
+      const el = document.getElementById(id);
+      const navbar = document.getElementById('navbar');
+      if (!el) return;
+
+      const offset = navbar?.offsetHeight ?? 80;
+
+      const top = el.getBoundingClientRect().top + window.scrollY - offset;
+
+      window.scrollTo({
+        top,
+        behavior: 'smooth',
+      });
+    };
 
     if (location.pathname !== '/') {
       navigate('/');
-      setTimeout(() => {
-        const el = document.getElementById(id);
-        el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
+      setTimeout(scrollWithOffset, 120);
       return;
     }
 
-    const el = document.getElementById(id);
-    el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    scrollWithOffset();
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#100406]/80 backdrop-blur-xl">
+    <header
+      id="navbar"
+      className="sticky top-0 z-50 border-b border-white/10 bg-[#100406]/80 backdrop-blur-xl"
+    >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
         <Link
           to="/"
