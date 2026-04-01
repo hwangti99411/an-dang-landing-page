@@ -10,24 +10,74 @@ export function CareersSection({ jobs }: { jobs: JobItem[] }) {
   const { locale } = useLanguage();
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
+  const isIOS = () => {
+    if (typeof navigator === 'undefined') return false;
+    return /iPad|iPhone|iPod/.test(navigator.userAgent);
+  };
+
+  const isAndroid = () => {
+    if (typeof navigator === 'undefined') return false;
+    return /Android/i.test(navigator.userAgent);
+  };
+
   const downloadFile = async (url: string, fileName: string) => {
     try {
+      // iPhone/iPad: giữ cách blob để vẫn hỗ trợ đặt đúng tên file như logic hiện tại
+      if (isIOS()) {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => {
+          window.URL.revokeObjectURL(blobUrl);
+        }, 1000);
+        return;
+      }
+
+      // Android: ưu tiên mở trực tiếp URL gốc vì blob/download hay lỗi trên Android
+      if (isAndroid()) {
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.setAttribute('download', fileName);
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        return;
+      }
+
+      // Desktop và các hệ khác: vẫn dùng blob để đảm bảo tên file tải về
       const res = await fetch(url);
       const blob = await res.blob();
-
       const blobUrl = window.URL.createObjectURL(blob);
-
       const a = document.createElement('a');
       a.href = blobUrl;
       a.download = fileName;
-
       document.body.appendChild(a);
       a.click();
-
       a.remove();
       window.URL.revokeObjectURL(blobUrl);
     } catch (err) {
       console.error('Download failed', err);
+      // fallback cuối cùng cho mọi hệ điều hành
+      try {
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.setAttribute('download', fileName);
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } catch (fallbackErr) {
+        console.error('Fallback download failed', fallbackErr);
+      }
     }
   };
 
