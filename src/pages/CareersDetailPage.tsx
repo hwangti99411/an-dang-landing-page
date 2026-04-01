@@ -16,6 +16,7 @@ export function CareersDetailPage() {
   const { locale } = useLanguage();
   const { id } = useParams();
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const downloadFile = async (url: string, fileName: string) => {
     try {
@@ -106,6 +107,7 @@ export function CareersDetailPage() {
         <div className="mt-10 grid gap-5 md:grid-cols-2">
           {jobs.map((job, index) => {
             const isActive = activeJobId === job.id;
+            const isDownloading = downloadingId === job.id;
             return (
               <div id={job.id} key={job.id}>
                 <motion.article
@@ -159,23 +161,35 @@ export function CareersDetailPage() {
                   </Link>
                   <button
                     type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-
-                      if (!job.jd_file_url) return;
-
-                      const title = locale === 'vi' ? job.title_vi : job.title_en;
-                      const ext = getExtension(job.jd_file_url);
-                      const fileName = `${normalizeFileName(title)}-job-AnDangTech.${ext}`;
-
-                      downloadFile(job.jd_file_url, fileName);
+                    disabled={!job.jd_file_url || isDownloading}
+                    onClick={async () => {
+                      if (!job.jd_file_url || isDownloading) return;
+                      setDownloadingId(job.id);
+                      try {
+                        const title = locale === 'vi' ? job.title_vi : job.title_en;
+                        const ext = getExtension(job.jd_file_url);
+                        const fileName = `${normalizeFileName(title)}-job-AnDangTech.${ext}`;
+                        await downloadFile(job.jd_file_url, fileName);
+                      } catch (err) {
+                        console.error(err);
+                      } finally {
+                        setDownloadingId(null);
+                      }
                     }}
-                    className={`mt-5 shrink-0 inline-flex text-sm font-medium ${
+                    className={`mt-6 inline-flex items-center gap-2 text-sm font-medium ${
                       job.jd_file_url ? 'text-brand-gold' : 'cursor-not-allowed text-white/35'
                     }`}
                   >
-                    {locale === 'vi' ? 'Ứng tuyển / nhận JD' : 'Apply / request JD'}
+                    {isDownloading && (
+                      <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+                    )}
+                    {isDownloading
+                      ? locale === 'vi'
+                        ? 'Đang tải...'
+                        : 'Downloading...'
+                      : locale === 'vi'
+                        ? 'Xem chi tiết JD'
+                        : 'View detail JD'}
                   </button>
                 </motion.article>
               </div>

@@ -4,11 +4,13 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './index.css';
 import { LanguageProvider } from './contexts/LanguageContext';
+import { Toaster } from 'react-hot-toast';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <LanguageProvider>
       <BrowserRouter>
+        <Toaster containerStyle={{ zIndex: 99999 }} />
         <App />
       </BrowserRouter>
     </LanguageProvider>

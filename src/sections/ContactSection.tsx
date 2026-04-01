@@ -3,6 +3,7 @@ import { CalendarClock, Mail, MapPin, Phone } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { format, parseISO, isValid } from 'date-fns';
+import toast from 'react-hot-toast';
 import { SectionHeading } from '@/components/SectionHeading';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { BookingPayload, LeadPayload, SiteSettings } from '@/types';
@@ -35,7 +36,8 @@ export function ContactSection({ settings }: { settings: SiteSettings }) {
     locale,
   });
 
-  const [status, setStatus] = useState('');
+  const [isSubmittingLead, setIsSubmittingLead] = useState(false);
+  const [isSubmittingBooking, setIsSubmittingBooking] = useState(false);
 
   useEffect(() => {
     setLead((prev) => ({ ...prev, locale }));
@@ -69,13 +71,14 @@ export function ContactSection({ settings }: { settings: SiteSettings }) {
     return data;
   };
 
-  const submitLead = async (e: React.FormEvent) => {
+  const submitLead = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setStatus(locale === 'vi' ? 'Đang gửi...' : 'Sending...');
+    if (isSubmittingLead) return;
+    setIsSubmittingLead(true);
 
     try {
       await postJson(`${API_BASE}/lead`, { ...lead, locale });
-      setStatus(locale === 'vi' ? 'Gửi thông tin thành công.' : 'Lead sent successfully.');
+      toast.success(locale === 'vi' ? 'Gửi thông tin thành công.' : 'Lead sent successfully.');
       setLead({
         name: '',
         email: '',
@@ -87,23 +90,25 @@ export function ContactSection({ settings }: { settings: SiteSettings }) {
       });
     } catch (error) {
       console.error('lead submit error', error);
-      setStatus(
+      toast.error(
         error instanceof Error
           ? error.message
           : locale === 'vi'
             ? 'Gửi thất bại, vui lòng kiểm tra cấu hình API.'
             : 'Submission failed. Please verify API configuration.',
       );
+    } finally {
+      setIsSubmittingLead(false);
     }
   };
 
-  const submitBooking = async (e: React.FormEvent) => {
+  const submitBooking = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setStatus(locale === 'vi' ? 'Đang tạo lịch...' : 'Booking...');
-
+    if (isSubmittingBooking) return;
+    setIsSubmittingBooking(true);
     try {
       await postJson(`${API_BASE}/booking`, { ...booking, locale });
-      setStatus(
+      toast.success(
         locale === 'vi' ? 'Đặt lịch tư vấn thành công.' : 'Consultation booked successfully.',
       );
       setBooking({
@@ -118,13 +123,15 @@ export function ContactSection({ settings }: { settings: SiteSettings }) {
       });
     } catch (error) {
       console.error('booking submit error', error);
-      setStatus(
+      toast.error(
         error instanceof Error
           ? error.message
           : locale === 'vi'
             ? 'Đặt lịch thất bại, vui lòng kiểm tra cấu hình API.'
             : 'Booking failed. Please verify API configuration.',
       );
+    } finally {
+      setIsSubmittingBooking(false);
     }
   };
 
@@ -139,7 +146,7 @@ export function ContactSection({ settings }: { settings: SiteSettings }) {
                 ? 'Trao đổi nhu cầu, nhận đề xuất và lên lịch tư vấn.'
                 : 'Share your needs, receive a proposal, and book a consultation.'
             }
-            description={''}
+            description=""
           />
           <div className="mt-8 space-y-4 text-sm text-white/72">
             <div className="glass flex items-start gap-3 rounded-3xl p-4">
@@ -207,8 +214,22 @@ export function ContactSection({ settings }: { settings: SiteSettings }) {
                 required
               />
             </div>
-            <button className="btn-primary mt-5 w-full">
-              {locale === 'vi' ? 'Nhận báo giá / tư vấn' : 'Get proposal / consultation'}
+            <button
+              type="submit"
+              disabled={isSubmittingLead}
+              className="btn-primary mt-5 flex w-full items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {isSubmittingLead && (
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              )}
+
+              {isSubmittingLead
+                ? locale === 'vi'
+                  ? 'Đang gửi...'
+                  : 'Sending...'
+                : locale === 'vi'
+                  ? 'Nhận báo giá / tư vấn'
+                  : 'Get proposal / consultation'}
             </button>
           </form>
 
@@ -264,7 +285,7 @@ export function ContactSection({ settings }: { settings: SiteSettings }) {
                         })()
                       : null
                   }
-                  onChange={(date: any) =>
+                  onChange={(date: Date | null) =>
                     setBooking({
                       ...booking,
                       schedule_at: date ? format(date, "yyyy-MM-dd'T'HH:mm:ss") : '',
@@ -293,12 +314,23 @@ export function ContactSection({ settings }: { settings: SiteSettings }) {
                 required
               />
             </div>
-            <button className="btn-secondary mt-5 w-full">
-              {locale === 'vi' ? 'Xác nhận lịch hẹn' : 'Confirm booking'}
+            <button
+              type="submit"
+              disabled={isSubmittingBooking}
+              className="btn-primary mt-5 flex w-full items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {isSubmittingBooking && (
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              )}
+              {isSubmittingBooking
+                ? locale === 'vi'
+                  ? 'Đang xác nhận...'
+                  : 'Confirming...'
+                : locale === 'vi'
+                  ? 'Xác nhận lịch hẹn'
+                  : 'Confirm booking'}
             </button>
           </form>
-
-          {status && <div className="text-sm text-white/70 xl:col-span-2">{status}</div>}
         </div>
       </div>
     </section>
