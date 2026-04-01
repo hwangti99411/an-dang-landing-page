@@ -8,20 +8,19 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
 export function NewsDetailPage() {
+  const location = useLocation();
   const { slug } = useParams();
   const { settings, posts } = usePublicContent();
   const { locale } = useLanguage();
   const post = posts.find((item) => item.slug === slug) ?? posts[0];
-
-  if (!post) return null;
-
-  const location = useLocation();
 
   useEffect(() => {
     if (!location.state?.scrollTo) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [location]);
+
+  if (!post) return null;
 
   return (
     <div>

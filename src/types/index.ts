@@ -43,19 +43,6 @@ export interface PostItem {
   is_featured: boolean;
 }
 
-export interface JobItem {
-  id: string;
-  title_vi: string;
-  title_en: string;
-  location_vi: string;
-  location_en: string;
-  type_vi: string;
-  type_en: string;
-  description_vi: string;
-  description_en: string;
-  is_active: boolean;
-}
-
 export interface SiteSettings {
   id: number;
   company_name_vi: string;
@@ -136,4 +123,5 @@ export interface JobItem {
   jd_file_url?: string;
   jd_file_path?: string;
   apply_url?: string;
+  sort: number;
 }

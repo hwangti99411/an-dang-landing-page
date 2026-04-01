@@ -9,22 +9,16 @@ import {
   Shield,
   Trash2,
 } from 'lucide-react';
+import { Toaster, toast } from 'sonner';
 import { fallbackSiteSettings } from '@/data/fallback';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { uploadPublicFile, uploadJobFile, deleteJobFile } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
-import type {
-  FaqItem,
-  JobItem,
-  PostItem,
-  ServiceItem,
-  SiteSettings,
-  TestimonialItem,
-} from '@/types';
+import type { SiteSettings } from '@/types';
 
 type CollectionTab = 'posts' | 'services' | 'testimonials' | 'faqs' | 'jobs';
 type AdminTab = 'site' | CollectionTab;
-type AdminRow = Record<string, string | boolean | null> & { id?: string | number };
+type AdminRow = Record<string, string | number | boolean | null> & { id?: string | number };
 
 const tabLabels: Record<AdminTab, { vi: string; en: string }> = {
   site: { vi: 'Site settings', en: 'Site settings' },
@@ -62,6 +56,7 @@ const defaultRows: Record<CollectionTab, AdminRow> = {
     type_en: '',
     description_vi: '',
     description_en: '',
+    sort: '',
     is_active: true,
     jd_file_url: '',
     jd_file_path: '',
@@ -75,6 +70,254 @@ function isLargeField(name: string) {
   return largeFieldHints.some((item) => name.includes(item));
 }
 
+const fieldDescriptions: Record<string, { vi: string; en: string }> = {
+  sort: {
+    vi: 'Thứ tự hiển thị, số nhỏ hơn sẽ hiện trước',
+    en: 'Display order, lower number appears first',
+  },
+  company_name_vi: {
+    vi: 'Tên công ty bằng tiếng Việt',
+    en: 'Company name in Vietnamese',
+  },
+  company_name_en: {
+    vi: 'Tên công ty bằng tiếng Anh',
+    en: 'Company name in English',
+  },
+  brand_name: {
+    vi: 'Tên thương hiệu hiển thị trên website',
+    en: 'Brand name shown on the website',
+  },
+  logo_url: {
+    vi: 'Đường dẫn logo thương hiệu',
+    en: 'Brand logo URL',
+  },
+  phone: {
+    vi: 'Số điện thoại liên hệ',
+    en: 'Contact phone number',
+  },
+  email: {
+    vi: 'Email liên hệ chính',
+    en: 'Main contact email',
+  },
+  address_vi: {
+    vi: 'Địa chỉ tiếng Việt',
+    en: 'Vietnamese address',
+  },
+  address_en: {
+    vi: 'Địa chỉ tiếng Anh',
+    en: 'English address',
+  },
+  hero_title_vi: {
+    vi: 'Tiêu đề hero tiếng Việt',
+    en: 'Hero title in Vietnamese',
+  },
+  hero_title_en: {
+    vi: 'Tiêu đề hero tiếng Anh',
+    en: 'Hero title in English',
+  },
+  hero_description_vi: {
+    vi: 'Mô tả hero tiếng Việt',
+    en: 'Hero description in Vietnamese',
+  },
+  hero_description_en: {
+    vi: 'Mô tả hero tiếng Anh',
+    en: 'Hero description in English',
+  },
+  footer_summary_vi: {
+    vi: 'Tóm tắt footer tiếng Việt',
+    en: 'Footer summary in Vietnamese',
+  },
+  footer_summary_en: {
+    vi: 'Tóm tắt footer tiếng Anh',
+    en: 'Footer summary in English',
+  },
+  about_title_vi: {
+    vi: 'Tiêu đề phần giới thiệu tiếng Việt',
+    en: 'About section title in Vietnamese',
+  },
+  about_title_en: {
+    vi: 'Tiêu đề phần giới thiệu tiếng Anh',
+    en: 'About section title in English',
+  },
+  about_description_vi: {
+    vi: 'Nội dung phần giới thiệu tiếng Việt',
+    en: 'About section content in Vietnamese',
+  },
+  about_description_en: {
+    vi: 'Nội dung phần giới thiệu tiếng Anh',
+    en: 'About section content in English',
+  },
+  mission_vi: {
+    vi: 'Sứ mệnh tiếng Việt',
+    en: 'Mission in Vietnamese',
+  },
+  mission_en: {
+    vi: 'Sứ mệnh tiếng Anh',
+    en: 'Mission in English',
+  },
+  vision_vi: {
+    vi: 'Tầm nhìn tiếng Việt',
+    en: 'Vision in Vietnamese',
+  },
+  vision_en: {
+    vi: 'Tầm nhìn tiếng Anh',
+    en: 'Vision in English',
+  },
+  meta_title: {
+    vi: 'Tiêu đề SEO của website',
+    en: 'Website SEO title',
+  },
+  meta_description: {
+    vi: 'Mô tả SEO của website',
+    en: 'Website SEO description',
+  },
+
+  slug: {
+    vi: 'Đường dẫn thân thiện của bài viết',
+    en: 'Post URL slug',
+  },
+  title_vi: {
+    vi: 'Tiêu đề tiếng Việt',
+    en: 'Vietnamese title',
+  },
+  title_en: {
+    vi: 'Tiêu đề tiếng Anh',
+    en: 'English title',
+  },
+  excerpt_vi: {
+    vi: 'Mô tả ngắn tiếng Việt',
+    en: 'Vietnamese short excerpt',
+  },
+  excerpt_en: {
+    vi: 'Mô tả ngắn tiếng Anh',
+    en: 'English short excerpt',
+  },
+  content_vi: {
+    vi: 'Nội dung chi tiết tiếng Việt',
+    en: 'Detailed content in Vietnamese',
+  },
+  content_en: {
+    vi: 'Nội dung chi tiết tiếng Anh',
+    en: 'Detailed content in English',
+  },
+  category_vi: {
+    vi: 'Danh mục tiếng Việt',
+    en: 'Category in Vietnamese',
+  },
+  category_en: {
+    vi: 'Danh mục tiếng Anh',
+    en: 'Category in English',
+  },
+  published_at: {
+    vi: 'Ngày giờ xuất bản',
+    en: 'Publish date and time',
+  },
+  is_featured: {
+    vi: 'Đánh dấu bài viết nổi bật',
+    en: 'Mark as featured',
+  },
+  cover_url: {
+    vi: 'Đường dẫn ảnh bìa',
+    en: 'Cover image URL',
+  },
+
+  icon: {
+    vi: 'Tên icon sử dụng cho dịch vụ',
+    en: 'Icon name for service',
+  },
+  description_vi: {
+    vi: 'Mô tả tiếng Việt',
+    en: 'Vietnamese description',
+  },
+  description_en: {
+    vi: 'Mô tả tiếng Anh',
+    en: 'English description',
+  },
+
+  name: {
+    vi: 'Tên người đánh giá',
+    en: 'Reviewer name',
+  },
+  role_vi: {
+    vi: 'Chức vụ tiếng Việt',
+    en: 'Role in Vietnamese',
+  },
+  role_en: {
+    vi: 'Chức vụ tiếng Anh',
+    en: 'Role in English',
+  },
+  company: {
+    vi: 'Tên công ty',
+    en: 'Company name',
+  },
+  quote_vi: {
+    vi: 'Nội dung feedback tiếng Việt',
+    en: 'Feedback content in Vietnamese',
+  },
+  quote_en: {
+    vi: 'Nội dung feedback tiếng Anh',
+    en: 'Feedback content in English',
+  },
+
+  question_vi: {
+    vi: 'Câu hỏi tiếng Việt',
+    en: 'Question in Vietnamese',
+  },
+  question_en: {
+    vi: 'Câu hỏi tiếng Anh',
+    en: 'Question in English',
+  },
+  answer_vi: {
+    vi: 'Câu trả lời tiếng Việt',
+    en: 'Answer in Vietnamese',
+  },
+  answer_en: {
+    vi: 'Câu trả lời tiếng Anh',
+    en: 'Answer in English',
+  },
+
+  location_vi: {
+    vi: 'Địa điểm làm việc tiếng Việt',
+    en: 'Work location in Vietnamese',
+  },
+  location_en: {
+    vi: 'Địa điểm làm việc tiếng Anh',
+    en: 'Work location in English',
+  },
+  type_vi: {
+    vi: 'Loại hình công việc tiếng Việt',
+    en: 'Job type in Vietnamese',
+  },
+  type_en: {
+    vi: 'Loại hình công việc tiếng Anh',
+    en: 'Job type in English',
+  },
+  is_active: {
+    vi: 'Trạng thái đang tuyển',
+    en: 'Hiring status',
+  },
+  jd_file_url: {
+    vi: 'Đường dẫn file mô tả công việc',
+    en: 'Job description file URL',
+  },
+  jd_file_path: {
+    vi: 'Đường dẫn nội bộ file JD',
+    en: 'Internal JD file path',
+  },
+  apply_url: {
+    vi: 'Đường dẫn ứng tuyển',
+    en: 'Application URL',
+  },
+};
+
+function getFieldDescription(key: string, locale: 'vi' | 'en') {
+  return fieldDescriptions[key]?.[locale] ?? (locale === 'vi' ? 'Mô tả ngắn' : 'Short description');
+}
+
+function getFieldLabel(key: string, locale: 'vi' | 'en') {
+  return `${key.toUpperCase()} - ${getFieldDescription(key, locale)}`;
+}
+
 export function AdminPage() {
   const language = useLanguage();
   const locale = language?.locale ?? 'vi';
@@ -83,7 +326,7 @@ export function AdminPage() {
   const [password, setPassword] = useState('');
   const [sessionReady, setSessionReady] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
-  const [message, setMessage] = useState<string>('');
+  const [_message, setMessage] = useState<string>('');
   const [busy, setBusy] = useState(false);
   const [rows, setRows] = useState<Record<CollectionTab, AdminRow[]>>({
     posts: [],
@@ -96,6 +339,24 @@ export function AdminPage() {
   const [siteDraft, setSiteDraft] = useState<SiteSettings>(fallbackSiteSettings);
 
   const jobFileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const notifySuccess = (textVi: string, textEn: string) => {
+    const text = locale === 'vi' ? textVi : textEn;
+    setMessage(text);
+    toast.success(text);
+  };
+
+  const notifyError = (error: unknown) => {
+    const text = getErrorMessage(error);
+    setMessage(text);
+    toast.error(text);
+  };
+
+  const notifyInfo = (textVi: string, textEn: string) => {
+    const text = locale === 'vi' ? textVi : textEn;
+    setMessage(text);
+    toast(text);
+  };
 
   const collectionColumns = useMemo(() => {
     if (activeTab === 'site') return [];
@@ -141,7 +402,7 @@ export function AdminPage() {
       .eq('id', 1)
       .maybeSingle();
     if (error) {
-      setMessage(getErrorMessage(error));
+      notifyError(error);
       return;
     }
     if (data) setSiteDraft(data as SiteSettings);
@@ -149,13 +410,17 @@ export function AdminPage() {
 
   async function loadTable(tab: CollectionTab) {
     if (!supabase) return;
-    const orderColumn = tab === 'posts' ? 'published_at' : 'created_at';
-    const { data, error } = await supabase
-      .from(tab)
-      .select('*')
-      .order(orderColumn, { ascending: false });
+    let query = supabase.from(tab).select('*');
+    if (tab === 'posts') {
+      query = query.order('published_at', { ascending: false });
+    } else if (tab === 'jobs') {
+      query = query.order('sort', { ascending: true }).order('created_at', { ascending: false });
+    } else {
+      query = query.order('created_at', { ascending: false });
+    }
+    const { data, error } = await query;
     if (error) {
-      setMessage(getErrorMessage(error));
+      notifyError(error);
       return;
     }
     setRows((prev) => ({ ...prev, [tab]: (data ?? []) as AdminRow[] }));
@@ -185,24 +450,25 @@ export function AdminPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!supabase) {
-      setMessage('Missing Supabase environment variables.');
+      notifyError('Missing Supabase environment variables.');
       return;
     }
     setBusy(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
     if (error) {
-      setMessage(getErrorMessage(error));
+      notifyError(error);
       return;
     }
     setLoggedIn(true);
-    setMessage(locale === 'vi' ? 'Đăng nhập thành công.' : 'Logged in successfully.');
+    notifySuccess('Đăng nhập thành công.', 'Logged in successfully.');
   };
 
   const handleLogout = async () => {
     if (!supabase) return;
     await supabase.auth.signOut();
     setLoggedIn(false);
+    notifySuccess('Đăng xuất thành công.', 'Logged out successfully.');
   };
 
   const saveCollectionDraft = async (e: React.FormEvent) => {
@@ -221,11 +487,10 @@ export function AdminPage() {
     setBusy(false);
 
     if (error) {
-      setMessage(getErrorMessage(error));
+      notifyError(error);
       return;
     }
-
-    setMessage(locale === 'vi' ? 'Lưu thành công.' : 'Saved successfully.');
+    notifySuccess('Lưu thành công.', 'Saved successfully.');
     setDraft(defaultRows[table]);
     if (activeTab === 'jobs' && jobFileInputRef.current) {
       jobFileInputRef.current.value = '';
@@ -241,21 +506,26 @@ export function AdminPage() {
       .from('site_settings')
       .upsert({ ...siteDraft, id: 1 }, { onConflict: 'id' });
     setBusy(false);
-    setMessage(
-      error
-        ? getErrorMessage(error)
-        : locale === 'vi'
-          ? 'Đã cập nhật site settings.'
-          : 'Site settings updated.',
-    );
+    if (error) {
+      notifyError(error);
+      return;
+    }
+    notifySuccess('Đã cập nhật site settings.', 'Site settings updated.');
   };
 
-  const editRow = (row: AdminRow) => setDraft(row);
+  const editRow = (row: AdminRow) => {
+    setDraft(row);
+    notifyInfo('Đã nạp dữ liệu vào form để chỉnh sửa.', 'Loaded row into form for editing.');
+  };
 
   const deleteRow = async (table: CollectionTab, id?: string | number) => {
     if (!supabase || !id) return;
     const { error } = await supabase.from(table).delete().eq('id', id);
-    setMessage(error ? error.message : locale === 'vi' ? 'Đã xoá bản ghi.' : 'Record deleted.');
+    if (error) {
+      notifyError(error);
+      return;
+    }
+    notifySuccess('Đã xoá bản ghi.', 'Record deleted.');
     await loadTable(table);
   };
 
@@ -268,9 +538,9 @@ export function AdminPage() {
       } else {
         setDraft((prev: any) => ({ ...prev, cover_url: url }));
       }
-      setMessage(locale === 'vi' ? 'Upload ảnh thành công.' : 'Image uploaded successfully.');
+      notifySuccess('Upload ảnh thành công.', 'Image uploaded successfully.');
     } catch (error) {
-      setMessage(getErrorMessage(error));
+      notifyError(error);
     } finally {
       setBusy(false);
     }
@@ -278,8 +548,7 @@ export function AdminPage() {
 
   const uploadJobAsset = async (file: File) => {
     try {
-      setMessage(locale === 'vi' ? 'Đang upload JD...' : 'Uploading JD...');
-
+      notifyInfo('Đang upload JD...', 'Uploading JD...');
       const oldPath = String(draft.jd_file_path ?? '');
       if (oldPath) {
         try {
@@ -296,10 +565,9 @@ export function AdminPage() {
         jd_file_url: uploaded.publicUrl,
         jd_file_path: uploaded.path,
       }));
-
-      setMessage(locale === 'vi' ? 'Upload JD thành công.' : 'JD uploaded successfully.');
+      notifySuccess('Upload JD thành công.', 'JD uploaded successfully.');
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Upload failed');
+      notifyError(error instanceof Error ? error.message : 'Upload failed');
     }
   };
 
@@ -308,7 +576,7 @@ export function AdminPage() {
       const path = String(draft.jd_file_path ?? '');
 
       if (!path) {
-        setMessage(locale === 'vi' ? 'Không có file để xoá.' : 'No file to delete.');
+        notifyInfo('Không có file để xoá.', 'No file to delete.');
         if (jobFileInputRef.current) {
           jobFileInputRef.current.value = '';
         }
@@ -327,10 +595,9 @@ export function AdminPage() {
       if (jobFileInputRef.current) {
         jobFileInputRef.current.value = '';
       }
-
-      setMessage(locale === 'vi' ? 'Đã xoá file JD.' : 'JD file deleted.');
+      notifySuccess('Đã xoá file JD.', 'JD file deleted.');
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Delete failed');
+      notifyError(error instanceof Error ? error.message : 'Delete failed');
     } finally {
       setBusy(false);
     }
@@ -338,391 +605,429 @@ export function AdminPage() {
 
   if (!sessionReady) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-white">Loading...</div>
+      <div className="flex min-h-screen items-center justify-center text-white">
+        <Toaster position="top-right" richColors />
+        Loading...
+      </div>
     );
   }
 
   if (!loggedIn) {
     return (
-      <div className="flex min-h-screen items-center justify-center px-4">
-        <div className="glass w-full max-w-md rounded-[2rem] p-8">
-          <div className="mb-6 flex items-center gap-3 text-brand-gold">
-            <Shield size={22} />
-            <div>
-              <div className="text-sm uppercase tracking-[0.25em]">Admin</div>
-              <div className="text-xl font-semibold text-white">An Đăng CMS</div>
+      <>
+        <Toaster position="top-right" richColors />
+        <div className="flex min-h-screen items-center justify-center px-4">
+          <div className="glass w-full max-w-md rounded-[2rem] p-8">
+            <div className="mb-6 flex items-center gap-3 text-brand-gold">
+              <Shield size={22} />
+              <div>
+                <div className="text-sm uppercase tracking-[0.25em]">Admin</div>
+                <div className="text-xl font-semibold text-white">An Đăng CMS</div>
+              </div>
             </div>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <input
+                className="input"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                type="email"
+                required
+              />
+              <input
+                className="input"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                type="password"
+                required
+              />
+              <button className="btn-primary w-full justify-center" disabled={busy}>
+                {busy ? '...' : locale === 'vi' ? 'Đăng nhập' : 'Login'}
+              </button>
+            </form>
           </div>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <input
-              className="input"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              type="email"
-              required
-            />
-            <input
-              className="input"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              type="password"
-              required
-            />
-            <button className="btn-primary w-full justify-center" disabled={busy}>
-              {busy ? '...' : locale === 'vi' ? 'Đăng nhập' : 'Login'}
-            </button>
-            {message && <div className="text-sm text-white/70">{message}</div>}
-          </form>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#080304] px-4 py-8 text-white sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <div className="text-xs uppercase tracking-[0.35em] text-brand-gold">Admin CMS</div>
-            <h1 className="mt-2 text-3xl font-semibold">An Đăng content manager</h1>
-            <p className="mt-2 text-sm text-white/60">
-              {locale === 'vi'
-                ? 'Quản trị Hero, About, Footer, logo doanh nghiệp, bài viết, dịch vụ, feedback và FAQ.'
-                : 'Manage Hero, About, Footer, company logo, posts, services, testimonials, and FAQ.'}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <button className="btn-secondary gap-2" onClick={() => void refreshAll()}>
-              <RefreshCcw size={16} />
-              Reload
-            </button>
-            <button className="btn-secondary gap-2" onClick={handleLogout}>
-              <LogOut size={16} />
-              Logout
-            </button>
-          </div>
-        </div>
-
-        <div className="mb-6 flex flex-wrap gap-2">
-          {(Object.keys(tabLabels) as AdminTab[]).map((tab) => (
-            <button
-              key={tab}
-              className={`rounded-full px-4 py-2 text-sm ${activeTab === tab ? 'bg-brand-gold text-brand-dark' : 'bg-white/5 text-white/70'}`}
-              onClick={() => setActiveTab(tab)}
-            >
-              {tabLabels[tab][locale]}
-            </button>
-          ))}
-        </div>
-
-        {activeTab === 'site' ? (
-          <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-            <form onSubmit={saveSiteSettings} className="glass rounded-[2rem] p-5">
-              <div className="grid gap-3 md:grid-cols-2">
-                {Object.entries(siteDraft).map(([key, value]) => {
-                  if (key === 'id') return null;
-                  return (
-                    <div key={key} className={isLargeField(key) ? 'md:col-span-2' : ''}>
-                      <label className="mb-1 block text-xs uppercase tracking-[0.2em] text-white/45">
-                        {key}
-                      </label>
-                      {isLargeField(key) ? (
-                        <textarea
-                          className="input min-h-28"
-                          value={String(value ?? '')}
-                          onChange={(e) =>
-                            setSiteDraft(
-                              (prev) =>
-                                ({
-                                  ...(prev as SiteSettings),
-                                  [key]: e.target.value,
-                                }) as SiteSettings,
-                            )
-                          }
-                        />
-                      ) : (
-                        <input
-                          className="input"
-                          value={String(value ?? '')}
-                          onChange={(e) =>
-                            setSiteDraft(
-                              (prev) =>
-                                ({
-                                  ...(prev as SiteSettings),
-                                  [key]: e.target.value,
-                                }) as SiteSettings,
-                            )
-                          }
-                        />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="mt-4 flex flex-wrap gap-3">
-                <label className="btn-secondary cursor-pointer gap-2">
-                  <ImagePlus size={16} />
-                  {locale === 'vi' ? 'Upload logo' : 'Upload logo'}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) =>
-                      e.target.files?.[0] && void uploadAsset(e.target.files[0], 'logo')
-                    }
-                  />
-                </label>
-                <button className="btn-primary gap-2" disabled={busy}>
-                  <Save size={16} />
-                  {locale === 'vi' ? 'Lưu site settings' : 'Save site settings'}
-                </button>
-              </div>
-              {message && <div className="mt-3 text-sm text-white/70">{message}</div>}
-            </form>
-
-            <div className="glass rounded-[2rem] p-5">
-              <div className="text-sm uppercase tracking-[0.2em] text-brand-gold">Preview</div>
-              <div className="mt-4 overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
-                {siteDraft.logo_url ? (
-                  <img
-                    src={siteDraft.logo_url}
-                    alt={siteDraft.brand_name}
-                    className="h-16 w-16 rounded-2xl object-cover"
-                  />
-                ) : (
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-gold to-brand-accent font-black text-brand-dark">
-                    AD
-                  </div>
-                )}
-                <div className="mt-4 text-xs uppercase tracking-[0.3em] text-brand-gold">
-                  {siteDraft.brand_name}
-                </div>
-                <div className="mt-3 text-2xl font-semibold">
-                  {locale === 'vi' ? siteDraft.hero_title_vi : siteDraft.hero_title_en}
-                </div>
-                <div className="mt-3 text-sm leading-7 text-white/70">
-                  {locale === 'vi' ? siteDraft.hero_description_vi : siteDraft.hero_description_en}
-                </div>
-                <div className="mt-5 rounded-2xl border border-white/10 p-4 text-sm text-white/65">
-                  {locale === 'vi' ? siteDraft.footer_summary_vi : siteDraft.footer_summary_en}
-                </div>
-              </div>
+    <>
+      <Toaster position="top-right" richColors />
+      <div className="min-h-screen bg-[#080304] px-4 py-8 text-white sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <div className="text-xs uppercase tracking-[0.35em] text-brand-gold">Admin CMS</div>
+              <h1 className="mt-2 text-3xl font-semibold">An Đăng - Content Manager</h1>
+              <p className="mt-2 text-sm text-white/60">
+                {locale === 'vi'
+                  ? 'Quản trị Hero, About, Footer, logo doanh nghiệp, bài viết, dịch vụ, feedback và FAQ.'
+                  : 'Manage Hero, About, Footer, company logo, posts, services, testimonials, and FAQ.'}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <button className="btn-secondary gap-2" onClick={() => void refreshAll()}>
+                <RefreshCcw size={16} />
+                Reload
+              </button>
+              <button className="btn-secondary gap-2" onClick={handleLogout}>
+                <LogOut size={16} />
+                Logout
+              </button>
             </div>
           </div>
-        ) : (
-          <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-            <div className="glass rounded-[2rem] p-5">
-              <form onSubmit={saveCollectionDraft} className="space-y-3">
-                {collectionColumns.map((column) => (
-                  <div key={column}>
-                    <label className="mb-1 block text-xs uppercase tracking-[0.2em] text-white/45">
-                      {column}
-                    </label>
-                    {typeof defaultRows[activeTab][column] === 'boolean' ? (
-                      <select
-                        className="input"
-                        value={String(Boolean(draft[column]))}
-                        onChange={(e) =>
-                          setDraft({ ...draft, [column]: e.target.value === 'true' })
-                        }
-                      >
-                        <option value="true">true</option>
-                        <option value="false">false</option>
-                      </select>
-                    ) : isLargeField(column) ? (
-                      <textarea
-                        className="input min-h-28"
-                        value={String(draft[column] ?? '')}
-                        onChange={(e) => setDraft({ ...draft, [column]: e.target.value })}
-                      />
-                    ) : (
-                      <input
-                        className="input"
-                        value={String(draft[column] ?? '')}
-                        onChange={(e) => setDraft({ ...draft, [column]: e.target.value })}
-                      />
-                    )}
-                  </div>
-                ))}
 
-                {activeTab === 'posts' && (
-                  <label className="btn-secondary inline-flex cursor-pointer gap-2">
+          <div className="mb-6 flex flex-wrap gap-2">
+            {(Object.keys(tabLabels) as AdminTab[]).map((tab) => (
+              <button
+                key={tab}
+                className={`rounded-full px-4 py-2 text-sm ${
+                  activeTab === tab ? 'bg-brand-gold text-brand-dark' : 'bg-white/5 text-white/70'
+                }`}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tabLabels[tab][locale]}
+              </button>
+            ))}
+          </div>
+
+          {activeTab === 'site' ? (
+            <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+              <form onSubmit={saveSiteSettings} className="glass rounded-[2rem] p-5">
+                <div className="grid gap-3 md:grid-cols-2">
+                  {Object.entries(siteDraft).map(([key, value]) => {
+                    if (key === 'id') return null;
+                    return (
+                      <div key={key} className={isLargeField(key) ? 'md:col-span-2' : ''}>
+                        <label className="mb-1 block text-xs uppercase tracking-[0.2em] text-white/45">
+                          {getFieldLabel(key, locale)}
+                        </label>
+                        {isLargeField(key) ? (
+                          <textarea
+                            className="input min-h-28"
+                            value={String(value ?? '')}
+                            onChange={(e) =>
+                              setSiteDraft(
+                                (prev) =>
+                                  ({
+                                    ...(prev as SiteSettings),
+                                    [key]: e.target.value,
+                                  }) as SiteSettings,
+                              )
+                            }
+                          />
+                        ) : (
+                          <input
+                            className="input"
+                            value={String(value ?? '')}
+                            onChange={(e) =>
+                              setSiteDraft(
+                                (prev) =>
+                                  ({
+                                    ...(prev as SiteSettings),
+                                    [key]: e.target.value,
+                                  }) as SiteSettings,
+                              )
+                            }
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <label className="btn-secondary cursor-pointer gap-2">
                     <ImagePlus size={16} />
-                    {locale === 'vi' ? 'Upload ảnh cover bài viết' : 'Upload post cover image'}
+                    {locale === 'vi' ? 'Upload logo' : 'Upload logo'}
                     <input
                       type="file"
                       accept="image/*"
                       className="hidden"
                       onChange={(e) =>
-                        e.target.files?.[0] && void uploadAsset(e.target.files[0], 'post-cover')
+                        e.target.files?.[0] && void uploadAsset(e.target.files[0], 'logo')
                       }
                     />
                   </label>
-                )}
-
-                {activeTab === 'jobs' && (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="mb-2 block text-sm text-white/70">JD file (PDF/DOCX)</label>
-                      <input
-                        ref={jobFileInputRef}
-                        type="file"
-                        accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) void uploadJobAsset(file);
-                        }}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="mb-2 block text-sm text-white/70">JD file URL</label>
-                      <input
-                        className="input"
-                        disabled
-                        value={String(draft.jd_file_url ?? '')}
-                        onChange={(e) =>
-                          setDraft((prev: any) => ({ ...prev, jd_file_url: e.target.value }))
-                        }
-                      />
-                    </div>
-
-                    <div>
-                      <label className="mb-2 block text-sm text-white/70">Apply URL</label>
-                      <input
-                        className="input"
-                        disabled
-                        value={String(draft.apply_url ?? '')}
-                        onChange={(e) =>
-                          setDraft((prev: any) => ({ ...prev, apply_url: e.target.value }))
-                        }
-                      />
-                    </div>
-
-                    <div className="flex flex-wrap gap-3">
-                      <button
-                        type="button"
-                        className="btn-secondary"
-                        onClick={() => void removeJobAsset()}
-                        disabled={busy || !draft.jd_file_path}
-                      >
-                        {locale === 'vi' ? 'Xoá file JD' : 'Delete JD file'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex flex-wrap gap-3 pt-2">
                   <button className="btn-primary gap-2" disabled={busy}>
-                    {busy ? (
-                      <LoaderCircle size={16} className="animate-spin" />
-                    ) : (
-                      <Plus size={16} />
-                    )}
-                    {draft.id
-                      ? locale === 'vi'
-                        ? 'Cập nhật'
-                        : 'Update'
-                      : locale === 'vi'
-                        ? 'Tạo mới'
-                        : 'Create'}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    onClick={() => {
-                      setDraft(defaultRows[activeTab]);
-                      if (activeTab === 'jobs' && jobFileInputRef.current) {
-                        jobFileInputRef.current.value = '';
-                      }
-                    }}
-                  >
-                    {locale === 'vi' ? 'Làm mới form' : 'Reset form'}
+                    <Save size={16} />
+                    {locale === 'vi' ? 'Lưu site settings' : 'Save site settings'}
                   </button>
                 </div>
-                {message && <div className="text-sm text-white/70">{message}</div>}
               </form>
-            </div>
 
-            <div className="glass overflow-hidden rounded-[2rem] p-5">
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-left text-sm">
-                  <thead className="text-white/45">
-                    <tr>
-                      <th className="pb-3 pr-4">ID</th>
-                      <th className="pb-3 pr-4">Preview</th>
-                      <th className="pb-3">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows[activeTab].map((row) => (
-                      <tr key={String(row.id)} className="border-t border-white/8 align-top">
-                        <td className="py-4 pr-4 text-white/40">{String(row.id).slice(0, 8)}</td>
-                        <td className="py-4 pr-4 text-white/75">
-                          <div className="font-medium text-white">
-                            {String(
-                              'title_vi' in row
-                                ? row.title_vi
-                                : 'name' in row
-                                  ? row.name
-                                  : 'question_vi' in row
-                                    ? row.question_vi
-                                    : '',
-                            )}
-                          </div>
-                          {'cover_url' in row &&
-                            typeof row.cover_url === 'string' &&
-                            row.cover_url && (
-                              <img
-                                src={row.cover_url}
-                                alt="cover"
-                                className="mt-3 h-20 w-28 rounded-xl object-cover"
-                              />
-                            )}
-                          <div className="mt-1 max-w-xl text-xs leading-6 text-white/45">
-                            {String(
-                              'excerpt_vi' in row
-                                ? row.excerpt_vi
-                                : 'description_vi' in row
-                                  ? row.description_vi
-                                  : 'quote_vi' in row
-                                    ? row.quote_vi
-                                    : 'answer_vi' in row
-                                      ? row.answer_vi
-                                      : '',
-                            )}
-                          </div>
-                        </td>
-                        <td className="py-4">
-                          <div className="flex gap-2">
-                            <button
-                              className="rounded-full bg-white/5 px-3 py-1 text-xs"
-                              onClick={() => editRow(row)}
-                            >
-                              {locale === 'vi' ? 'Sửa' : 'Edit'}
-                            </button>
-                            <button
-                              className="rounded-full bg-red-500/15 px-3 py-1 text-xs text-red-200"
-                              onClick={() => void deleteRow(activeTab, row.id)}
-                            >
-                              <span className="inline-flex items-center gap-1">
-                                <Trash2 size={12} />
-                                {locale === 'vi' ? 'Xoá' : 'Delete'}
-                              </span>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="glass rounded-[2rem] p-5">
+                <div className="text-sm uppercase tracking-[0.2em] text-brand-gold">Preview</div>
+                <div className="mt-4 overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
+                  {siteDraft.logo_url ? (
+                    <img
+                      src={siteDraft.logo_url}
+                      alt={siteDraft.brand_name}
+                      className="h-16 w-16 rounded-2xl object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-gold to-brand-accent font-black text-brand-dark">
+                      AD
+                    </div>
+                  )}
+                  <div className="mt-4 text-xs uppercase tracking-[0.3em] text-brand-gold">
+                    {siteDraft.brand_name}
+                  </div>
+                  <div className="mt-3 text-2xl font-semibold">
+                    {locale === 'vi' ? siteDraft.hero_title_vi : siteDraft.hero_title_en}
+                  </div>
+                  <div className="mt-3 text-sm leading-7 text-white/70">
+                    {locale === 'vi'
+                      ? siteDraft.hero_description_vi
+                      : siteDraft.hero_description_en}
+                  </div>
+                  <div className="mt-5 rounded-2xl border border-white/10 p-4 text-sm text-white/65">
+                    {locale === 'vi' ? siteDraft.footer_summary_vi : siteDraft.footer_summary_en}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+              <div className="glass rounded-[2rem] p-5">
+                <form onSubmit={saveCollectionDraft} className="space-y-3">
+                  {collectionColumns.map((column) => (
+                    <div key={column}>
+                      <label className="mb-1 block text-xs uppercase tracking-[0.2em] text-white/45">
+                        {getFieldLabel(column, locale)}
+                      </label>
+
+                      {typeof defaultRows[activeTab][column] === 'boolean' ? (
+                        <select
+                          className="input"
+                          value={String(Boolean(draft[column]))}
+                          onChange={(e) =>
+                            setDraft({ ...draft, [column]: e.target.value === 'true' })
+                          }
+                        >
+                          <option value="true">true</option>
+                          <option value="false">false</option>
+                        </select>
+                      ) : column === 'sort' ? (
+                        <input
+                          type="number"
+                          inputMode="numeric"
+                          className="input"
+                          value={
+                            draft[column] === null || draft[column] === undefined
+                              ? ''
+                              : String(draft[column])
+                          }
+                          onChange={(e) =>
+                            setDraft({
+                              ...draft,
+                              [column]: e.target.value === '' ? '' : Number(e.target.value),
+                            })
+                          }
+                          onWheel={(e) => e.currentTarget.blur()}
+                        />
+                      ) : isLargeField(column) ? (
+                        <textarea
+                          className="input min-h-28"
+                          value={String(draft[column] ?? '')}
+                          onChange={(e) => setDraft({ ...draft, [column]: e.target.value })}
+                        />
+                      ) : (
+                        <input
+                          className="input"
+                          value={String(draft[column] ?? '')}
+                          onChange={(e) => setDraft({ ...draft, [column]: e.target.value })}
+                        />
+                      )}
+                    </div>
+                  ))}
+
+                  {activeTab === 'posts' && (
+                    <label className="btn-secondary inline-flex cursor-pointer gap-2">
+                      <ImagePlus size={16} />
+                      {locale === 'vi' ? 'Upload ảnh cover bài viết' : 'Upload post cover image'}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) =>
+                          e.target.files?.[0] && void uploadAsset(e.target.files[0], 'post-cover')
+                        }
+                      />
+                    </label>
+                  )}
+
+                  {activeTab === 'jobs' && (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="mb-2 block text-sm text-white/70">
+                          {getFieldLabel('jd_file_url', locale)} (PDF/DOCX)
+                        </label>
+                        <input
+                          ref={jobFileInputRef}
+                          type="file"
+                          accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) void uploadJobAsset(file);
+                          }}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-sm text-white/70">
+                          {getFieldLabel('jd_file_url', locale)}
+                        </label>
+                        <input
+                          className="input"
+                          disabled
+                          value={String(draft.jd_file_url ?? '')}
+                          onChange={(e) =>
+                            setDraft((prev: any) => ({ ...prev, jd_file_url: e.target.value }))
+                          }
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-sm text-white/70">
+                          {getFieldLabel('apply_url', locale)}
+                        </label>
+                        <input
+                          className="input"
+                          disabled
+                          value={String(draft.apply_url ?? '')}
+                          onChange={(e) =>
+                            setDraft((prev: any) => ({ ...prev, apply_url: e.target.value }))
+                          }
+                        />
+                      </div>
+
+                      <div className="flex flex-wrap gap-3">
+                        <button
+                          type="button"
+                          className="btn-secondary"
+                          onClick={() => void removeJobAsset()}
+                          disabled={busy || !draft.jd_file_path}
+                        >
+                          {locale === 'vi' ? 'Xoá file JD' : 'Delete JD file'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap gap-3 pt-2">
+                    <button className="btn-primary gap-2" disabled={busy}>
+                      {busy ? (
+                        <LoaderCircle size={16} className="animate-spin" />
+                      ) : (
+                        <Plus size={16} />
+                      )}
+                      {draft.id
+                        ? locale === 'vi'
+                          ? 'Cập nhật'
+                          : 'Update'
+                        : locale === 'vi'
+                          ? 'Tạo mới'
+                          : 'Create'}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={() => {
+                        setDraft(defaultRows[activeTab]);
+                        if (activeTab === 'jobs' && jobFileInputRef.current) {
+                          jobFileInputRef.current.value = '';
+                        }
+                        notifyInfo('Đã làm mới form.', 'Form reset successfully.');
+                      }}
+                    >
+                      {locale === 'vi' ? 'Làm mới form' : 'Reset form'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <div className="glass overflow-hidden rounded-[2rem] p-5">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-left text-sm">
+                    <thead className="text-white/45">
+                      <tr>
+                        <th className="pb-3 pr-4">ID</th>
+                        <th className="pb-3 pr-4">Sort</th>
+                        <th className="pb-3 pr-4">Preview</th>
+                        <th className="pb-3">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows[activeTab].map((row) => (
+                        <tr key={String(row.id)} className="border-t border-white/8 align-top">
+                          <td className="py-4 pr-4 text-white/40">{String(row.id).slice(0, 8)}</td>
+                          <td className="py-4 pr-4 text-white/70">{String(row.sort ?? '')}</td>
+                          <td className="py-4 pr-4 text-white/75">
+                            <div className="font-medium text-white">
+                              {String(
+                                'title_vi' in row
+                                  ? row.title_vi
+                                  : 'name' in row
+                                    ? row.name
+                                    : 'question_vi' in row
+                                      ? row.question_vi
+                                      : '',
+                              )}
+                            </div>
+                            {'cover_url' in row &&
+                              typeof row.cover_url === 'string' &&
+                              row.cover_url && (
+                                <img
+                                  src={row.cover_url}
+                                  alt="cover"
+                                  className="mt-3 h-20 w-28 rounded-xl object-cover"
+                                />
+                              )}
+                            <div className="mt-1 max-w-xl text-xs leading-6 text-white/45">
+                              {String(
+                                'excerpt_vi' in row
+                                  ? row.excerpt_vi
+                                  : 'description_vi' in row
+                                    ? row.description_vi
+                                    : 'quote_vi' in row
+                                      ? row.quote_vi
+                                      : 'answer_vi' in row
+                                        ? row.answer_vi
+                                        : '',
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-4">
+                            <div className="flex gap-2">
+                              <button
+                                className="rounded-full bg-white/5 px-3 py-1 text-xs"
+                                onClick={() => editRow(row)}
+                              >
+                                {locale === 'vi' ? 'Sửa' : 'Edit'}
+                              </button>
+                              <button
+                                className="rounded-full bg-red-500/15 px-3 py-1 text-xs text-red-200"
+                                onClick={() => void deleteRow(activeTab, row.id)}
+                              >
+                                <span className="inline-flex items-center gap-1">
+                                  <Trash2 size={12} />
+                                  {locale === 'vi' ? 'Xoá' : 'Delete'}
+                                </span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

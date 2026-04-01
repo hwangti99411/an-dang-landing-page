@@ -155,96 +155,100 @@ export function CareersDetailPage() {
           description={''}
         />
         <div className="mt-10 grid gap-5 md:grid-cols-2">
-          {jobs.map((job, index) => {
-            const isActive = activeJobId === job.id;
-            const isDownloading = downloadingId === job.id;
-            return (
-              <div id={job.id} key={job.id}>
-                <motion.article
-                  initial={{ opacity: 0, y: 16 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={
-                    isActive ? { duration: 0.6, repeat: 1 } : { duration: 0.4, delay: index * 0.08 }
-                  }
-                  animate={
-                    isActive
-                      ? {
-                          boxShadow: [
-                            '0 0 0 0 rgba(212,175,55,0)',
-                            '0 0 0 2px rgba(212,175,55,0.6)',
-                            '0 0 0 6px rgba(212,175,55,0.18)',
-                            '0 0 0 2px rgba(212,175,55,0.6)',
-                            '0 0 0 0 rgba(212,175,55,0)',
-                          ],
-                        }
-                      : {
-                          boxShadow: '0 0 0 0 rgba(212,175,55,0)',
-                        }
-                  }
-                  className="glass flex flex-col overflow-hidden rounded-[1.5rem] p-5 md:p-6 transition hover:-translate-y-1 hover:border-brand-gold/30 min-h-[240px] md:min-h-[260px] xl:h-[260px]"
-                >
-                  <Link to={`/careers/details/${job.id}`} className="block flex-1 min-h-0">
-                    <div className="flex flex-col gap-3 md:gap-4 xl:flex-row xl:items-start xl:justify-between">
-                      <h3 className="text-[18px] leading-[1.35] font-semibold text-white md:text-[22px] xl:text-xl">
-                        {locale === 'vi' ? job.title_vi : job.title_en}
-                      </h3>
-                      <span className="w-fit shrink-0 rounded-full bg-brand-gold/10 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-brand-gold md:text-xs">
-                        {locale === 'vi' ? job.type_vi : job.type_en}
-                      </span>
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[13px] text-white/65 md:text-sm">
-                      <span className="inline-flex items-center gap-2">
-                        <MapPin size={16} />
-                        {locale === 'vi' ? job.location_vi : job.location_en}
-                      </span>
-                      <span className="inline-flex items-center gap-2">
-                        <BriefcaseBusiness size={16} />
-                        {locale === 'vi' ? job.type_vi : job.type_en}
-                      </span>
-                    </div>
-                    <div className="mt-4 overflow-hidden">
-                      <p className="job-desc text-sm leading-7 text-white/70">
-                        {locale === 'vi' ? job.description_vi : job.description_en}
-                      </p>
-                    </div>
-                  </Link>
-                  <button
-                    type="button"
-                    disabled={!job.jd_file_url || isDownloading}
-                    onClick={async () => {
-                      if (!job.jd_file_url || isDownloading) return;
-                      setDownloadingId(job.id);
-                      try {
-                        const title = locale === 'vi' ? job.title_vi : job.title_en;
-                        const ext = getExtension(job.jd_file_url);
-                        const fileName = `${normalizeFileName(title)}-job-AnDangTech.${ext}`;
-                        await downloadFile(job.jd_file_url, fileName);
-                      } catch (err) {
-                        console.error(err);
-                      } finally {
-                        setDownloadingId(null);
-                      }
-                    }}
-                    className={`mt-6 inline-flex items-center gap-2 text-sm font-medium ${
-                      job.jd_file_url ? 'text-brand-gold' : 'cursor-not-allowed text-white/35'
-                    }`}
+          {jobs
+            .sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0))
+            .map((job, index) => {
+              const isActive = activeJobId === job.id;
+              const isDownloading = downloadingId === job.id;
+              return (
+                <div id={job.id} key={job.id}>
+                  <motion.article
+                    initial={{ opacity: 0, y: 16 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={
+                      isActive
+                        ? { duration: 0.6, repeat: 1 }
+                        : { duration: 0.4, delay: index * 0.08 }
+                    }
+                    animate={
+                      isActive
+                        ? {
+                            boxShadow: [
+                              '0 0 0 0 rgba(212,175,55,0)',
+                              '0 0 0 2px rgba(212,175,55,0.6)',
+                              '0 0 0 6px rgba(212,175,55,0.18)',
+                              '0 0 0 2px rgba(212,175,55,0.6)',
+                              '0 0 0 0 rgba(212,175,55,0)',
+                            ],
+                          }
+                        : {
+                            boxShadow: '0 0 0 0 rgba(212,175,55,0)',
+                          }
+                    }
+                    className="glass flex flex-col overflow-hidden rounded-[1.5rem] p-5 md:p-6 transition hover:-translate-y-1 hover:border-brand-gold/30 min-h-[240px] md:min-h-[260px] xl:h-[260px]"
                   >
-                    {isDownloading && (
-                      <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
-                    )}
-                    {isDownloading
-                      ? locale === 'vi'
-                        ? 'Đang tải...'
-                        : 'Downloading...'
-                      : locale === 'vi'
-                        ? 'Xem chi tiết JD'
-                        : 'View detail JD'}
-                  </button>
-                </motion.article>
-              </div>
-            );
-          })}
+                    <Link to={`/careers/details/${job.id}`} className="block flex-1 min-h-0">
+                      <div className="flex flex-col gap-3 md:gap-4 xl:flex-row xl:items-start xl:justify-between">
+                        <h3 className="text-[18px] leading-[1.35] font-semibold text-white md:text-[22px] xl:text-xl">
+                          {locale === 'vi' ? job.title_vi : job.title_en}
+                        </h3>
+                        <span className="w-fit shrink-0 rounded-full bg-brand-gold/10 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-brand-gold md:text-xs">
+                          {locale === 'vi' ? job.type_vi : job.type_en}
+                        </span>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[13px] text-white/65 md:text-sm">
+                        <span className="inline-flex items-center gap-2">
+                          <MapPin size={16} />
+                          {locale === 'vi' ? job.location_vi : job.location_en}
+                        </span>
+                        <span className="inline-flex items-center gap-2">
+                          <BriefcaseBusiness size={16} />
+                          {locale === 'vi' ? job.type_vi : job.type_en}
+                        </span>
+                      </div>
+                      <div className="mt-4 overflow-hidden">
+                        <p className="job-desc text-sm leading-7 text-white/70">
+                          {locale === 'vi' ? job.description_vi : job.description_en}
+                        </p>
+                      </div>
+                    </Link>
+                    <button
+                      type="button"
+                      disabled={!job.jd_file_url || isDownloading}
+                      onClick={async () => {
+                        if (!job.jd_file_url || isDownloading) return;
+                        setDownloadingId(job.id);
+                        try {
+                          const title = locale === 'vi' ? job.title_vi : job.title_en;
+                          const ext = getExtension(job.jd_file_url);
+                          const fileName = `${normalizeFileName(title)}-job-AnDangTech.${ext}`;
+                          await downloadFile(job.jd_file_url, fileName);
+                        } catch (err) {
+                          console.error(err);
+                        } finally {
+                          setDownloadingId(null);
+                        }
+                      }}
+                      className={`mt-6 inline-flex items-center gap-2 text-sm font-medium ${
+                        job.jd_file_url ? 'text-brand-gold' : 'cursor-not-allowed text-white/35'
+                      }`}
+                    >
+                      {isDownloading && (
+                        <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+                      )}
+                      {isDownloading
+                        ? locale === 'vi'
+                          ? 'Đang tải...'
+                          : 'Downloading...'
+                        : locale === 'vi'
+                          ? 'Xem chi tiết JD'
+                          : 'View detail JD'}
+                    </button>
+                  </motion.article>
+                </div>
+              );
+            })}
         </div>
       </section>
       <Footer settings={settings} />
