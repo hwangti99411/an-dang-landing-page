@@ -3,3 +3,6 @@ dist
 .env
 .cloudflare
 .DS_Store
+.wrangler
+.vscode
+.github
