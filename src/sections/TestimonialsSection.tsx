@@ -16,9 +16,7 @@ export function TestimonialsSection({ testimonials }: { testimonials: Testimonia
             ? 'Khách hàng tìm thấy sự an tâm trong từng giai đoạn triển khai.'
             : 'Clients find confidence in every stage of delivery.'
         }
-        description={
-          ""
-        }
+        description={''}
         align="center"
       />
       <div className="mt-10 grid gap-5 lg:grid-cols-3">

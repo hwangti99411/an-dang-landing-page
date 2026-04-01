@@ -1,6 +1,7 @@
 import { BrandLogo } from './BrandLogo';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { SiteSettings } from '@/types';
+import { Link } from 'react-router-dom';
 
 export function Footer({ settings }: { settings: SiteSettings }) {
   const { locale } = useLanguage();
@@ -17,54 +18,44 @@ export function Footer({ settings }: { settings: SiteSettings }) {
         <div>
           <h4 className="text-sm font-semibold uppercase tracking-[0.2em] text-white">Menu</h4>
           <div className="mt-4 space-y-3 text-sm text-white/65">
-            <a
-              onClick={() => {
-                document.getElementById('about')?.scrollIntoView({
-                  behavior: 'smooth',
-                });
-              }}
-              className="gap-2 block cursor-pointer"
-            >
-              {locale === 'vi' ? 'Giới thiệu' : 'About'}
-            </a>
-            <a
-              onClick={() => {
-                document.getElementById('services')?.scrollIntoView({
-                  behavior: 'smooth',
-                });
-              }}
-              className="gap-2 block cursor-pointer"
-            >
-              {locale === 'vi' ? 'Dịch vụ' : 'Services'}
-            </a>
-            <a
-              onClick={() => {
-                document.getElementById('news')?.scrollIntoView({
-                  behavior: 'smooth',
-                });
-              }}
-              className="gap-2 block cursor-pointer"
-            >
-              {locale === 'vi' ? 'Tin tức' : 'News'}
-            </a>
-            <a
-              onClick={() => {
-                document.getElementById('contact')?.scrollIntoView({
-                  behavior: 'smooth',
-                });
-              }}
-              className="gap-2 block cursor-pointer"
-            >
-              {locale === 'vi' ? 'Liên hệ' : 'Contact'}
-            </a>
+            <Link to={'/about'} state={{ scrollTo: 'about' }}>
+              <span className="gap-2 block cursor-pointer">
+                {locale === 'vi' ? 'Giới thiệu' : 'About'}
+              </span>
+            </Link>
+            <Link to={'/services'} state={{ scrollTo: 'services' }}>
+              <span className="gap-2 block cursor-pointer">
+                {locale === 'vi' ? 'Dịch vụ' : 'Services'}
+              </span>
+            </Link>
+            <Link to={'/news'} state={{ scrollTo: 'news' }}>
+              <span className="gap-2 block cursor-pointer">
+                {locale === 'vi' ? 'Tin tức' : 'News'}
+              </span>
+            </Link>
+            <Link to={'/careers'} state={{ scrollTo: 'careers' }}>
+              <span className="gap-2 block cursor-pointer">
+                {locale === 'vi' ? 'Tuyển dụng' : 'Careers'}
+              </span>
+            </Link>
+            <Link to={'/contact'} state={{ scrollTo: 'contact' }}>
+              <span className="gap-2 block cursor-pointer">
+                {locale === 'vi' ? 'Liên hệ' : 'Contact'}
+              </span>
+            </Link>
           </div>
         </div>
         <div>
           <h4 className="text-sm font-semibold uppercase tracking-[0.2em] text-white">Contact</h4>
           <div className="mt-4 space-y-3 text-sm text-white/65">
-            <div>{locale === 'vi' ? 'SĐT': 'Phone'}: {settings.phone}</div>
+            <div>
+              {locale === 'vi' ? 'SĐT' : 'Phone'}: {settings.phone}
+            </div>
             <div>Email: {settings.email}</div>
-            <div>{locale === 'vi' ? 'Địa chỉ': 'Address'}: {locale === 'vi' ? settings.address_vi : settings.address_en}</div>
+            <div>
+              {locale === 'vi' ? 'Địa chỉ' : 'Address'}:{' '}
+              {locale === 'vi' ? settings.address_vi : settings.address_en}
+            </div>
           </div>
         </div>
       </div>

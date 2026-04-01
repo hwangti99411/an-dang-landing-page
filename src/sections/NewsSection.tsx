@@ -18,9 +18,7 @@ export function NewsSection({ posts }: { posts: PostItem[] }) {
             ? 'Cập nhật doanh nghiệp, góc nhìn công nghệ và thông tin tuyển dụng.'
             : 'Company updates, technology insights, and hiring announcements.'
         }
-        description={
-          ""
-        }
+        description={''}
       />
       <div className="mt-10 grid gap-5 lg:grid-cols-3">
         {posts.slice(0, 3).map((post, index) => (
@@ -58,7 +56,7 @@ export function NewsSection({ posts }: { posts: PostItem[] }) {
               </p>
               <Link
                 to={`/news/${post.slug}`}
-                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                state={{ scrollTo: null }}
                 className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-brand-gold"
               >
                 {locale === 'vi' ? 'Xem chi tiết' : 'Read more'}

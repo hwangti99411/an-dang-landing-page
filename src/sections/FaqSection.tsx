@@ -18,9 +18,7 @@ export function FaqSection({ faqs }: { faqs: FaqItem[] }) {
             ? 'Những câu hỏi thường gặp trước khi bắt đầu.'
             : 'Questions clients ask before getting started.'
         }
-        description={
-         ""
-        }
+        description={''}
         align="center"
       />
       <div className="mt-10 space-y-4">

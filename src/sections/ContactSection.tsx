@@ -139,9 +139,7 @@ export function ContactSection({ settings }: { settings: SiteSettings }) {
                 ? 'Trao đổi nhu cầu, nhận đề xuất và lên lịch tư vấn.'
                 : 'Share your needs, receive a proposal, and book a consultation.'
             }
-            description={
-            ''
-            }
+            description={''}
           />
           <div className="mt-8 space-y-4 text-sm text-white/72">
             <div className="glass flex items-start gap-3 rounded-3xl p-4">

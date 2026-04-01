@@ -1,6 +1,6 @@
 import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { LanguageToggle } from './LanguageToggle';
 import { BrandLogo } from './BrandLogo';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -28,35 +28,7 @@ const navItems = {
 export function Navbar({ settings }: { settings: SiteSettings }) {
   const [open, setOpen] = useState(false);
   const { locale } = useLanguage();
-  const location = useLocation();
   const navigate = useNavigate();
-
-  const scrollToSection = (id: string) => {
-    setOpen(false);
-
-    const scrollWithOffset = () => {
-      const el = document.getElementById(id);
-      const navbar = document.getElementById('navbar');
-      if (!el) return;
-
-      const offset = navbar?.offsetHeight ?? 80;
-
-      const top = el.getBoundingClientRect().top + window.scrollY - offset;
-
-      window.scrollTo({
-        top,
-        behavior: 'smooth',
-      });
-    };
-
-    if (location.pathname !== '/') {
-      navigate('/');
-      setTimeout(scrollWithOffset, 120);
-      return;
-    }
-
-    scrollWithOffset();
-  };
 
   return (
     <header
@@ -67,10 +39,11 @@ export function Navbar({ settings }: { settings: SiteSettings }) {
         <Link
           to="/"
           className="flex items-center gap-3"
+          state={{ scrollTo: null }}
           onClick={(e) => {
             if (window.location.pathname === '/') {
               e.preventDefault();
-              window.scrollTo({ top: 0, behavior: 'smooth' });
+              navigate('/');
             }
           }}
         >
@@ -79,14 +52,15 @@ export function Navbar({ settings }: { settings: SiteSettings }) {
 
         <nav className="hidden items-center gap-6 lg:flex">
           {navItems[locale].map(([id, label]) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => scrollToSection(id)}
-              className="text-sm text-white/70 transition hover:text-white"
-            >
-              {label}
-            </button>
+            <Link key={id} to={`/${id}`} state={{ scrollTo: id }}>
+              <button
+                key={id}
+                type="button"
+                className="text-sm text-white/70 transition hover:text-white"
+              >
+                {label}
+              </button>
+            </Link>
           ))}
           {/* <Link to="/admin" className="text-sm text-white/70 transition hover:text-white">
             Admin
@@ -95,7 +69,7 @@ export function Navbar({ settings }: { settings: SiteSettings }) {
 
         <div className="hidden items-center gap-3 lg:flex">
           <LanguageToggle />
-          <button type="button" onClick={() => scrollToSection('contact')} className="btn-primary">
+          <button type="button" className="btn-primary">
             {locale === 'vi' ? settings.hero_primary_cta_vi : settings.hero_primary_cta_en}
           </button>
         </div>
@@ -113,19 +87,20 @@ export function Navbar({ settings }: { settings: SiteSettings }) {
         <div className="border-t border-white/10 bg-[#120507] px-4 py-4 lg:hidden">
           <div className="flex flex-col gap-4">
             {navItems[locale].map(([id, label]) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => scrollToSection(id)}
-                className="text-left text-sm text-white/80"
-              >
-                {label}
-              </button>
+              <Link key={id} to={`/${id}`} state={{ scrollTo: id }}>
+                <button
+                  key={id}
+                  type="button"
+                  className="text-sm text-white/70 transition hover:text-white"
+                >
+                  {label}
+                </button>
+              </Link>
             ))}
             {/* <Link to="/admin" className="text-sm text-white/80" onClick={() => setOpen(false)}>
               Admin
             </Link> */}
-            <div className="pt-2 w-[98px]">
+            <div className="pt-2 w-[102px]">
               <LanguageToggle />
             </div>
           </div>

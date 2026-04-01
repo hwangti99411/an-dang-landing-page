@@ -50,9 +50,7 @@ export function ProjectsSection() {
             ? 'Một số mô hình triển khai tiêu biểu.'
             : 'A few representative delivery models.'
         }
-        description={
-          ""
-        }
+        description={''}
       />
       <div className="mt-10 grid gap-5 lg:grid-cols-3">
         {projects.map(([title, desc, metric], index) => (

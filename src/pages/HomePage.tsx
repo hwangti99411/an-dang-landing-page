@@ -20,13 +20,26 @@ export function HomePage() {
   const location = useLocation();
 
   useEffect(() => {
-    if (location.state?.scrollTo) {
-      const el = document.getElementById(location.state.scrollTo);
-      if (el) {
-        setTimeout(() => {
-          el.scrollIntoView({ behavior: 'smooth' });
-        }, 100); // delay để đảm bảo DOM render xong
-      }
+    if (!location.state?.scrollTo) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      const scrollWithOffset = () => {
+        const el = document.getElementById(location.state.scrollTo);
+        const navbar = document.getElementById('navbar');
+        if (!el) return;
+
+        const offset = navbar?.offsetHeight ?? 80;
+        const top = el.getBoundingClientRect().top + window.scrollY - offset;
+
+        window.scrollTo({
+          top,
+          behavior: 'smooth',
+        });
+      };
+
+      const timer = setTimeout(scrollWithOffset, 120);
+
+      return () => clearTimeout(timer);
     }
   }, [location]);
 

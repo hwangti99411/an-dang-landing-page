@@ -212,32 +212,56 @@ export const fallbackPosts: PostItem[] = [
 ];
 
 export const fallbackJobs: JobItem[] = [
+  // {
+  //   id: '1',
+  //   title_vi: 'Frontend React Developer',
+  //   title_en: 'Frontend React Developer',
+  //   location_vi: 'Hà Nội / Hybrid',
+  //   location_en: 'Hanoi / Hybrid',
+  //   type_vi: 'Toàn thời gian',
+  //   type_en: 'Full-time',
+  //   description_vi:
+  //     'Tham gia xây dựng website doanh nghiệp, landing page, dashboard quản trị và trải nghiệm frontend hiện đại với React, TypeScript và cloud services.',
+  //   description_en:
+  //     'Build corporate websites, landing pages, admin dashboards, and modern frontend experiences using React, TypeScript, and cloud services.',
+  //   is_active: true,
+  // },
+  // {
+  //   id: '2',
+  //   title_vi: 'Business Analyst / Presales IT',
+  //   title_en: 'Business Analyst / IT Presales',
+  //   location_vi: 'Hà Nội',
+  //   location_en: 'Hanoi',
+  //   type_vi: 'Bán thời gian / Full-time',
+  //   type_en: 'Part-time / Full-time',
+  //   description_vi:
+  //     'Làm việc với khách hàng để phân tích nhu cầu, viết proposal sơ bộ và hỗ trợ định nghĩa giải pháp công nghệ phù hợp.',
+  //   description_en:
+  //     'Work with clients to analyze needs, prepare initial proposals, and help define suitable technology solutions.',
+  //   is_active: true,
+  // },
   {
     id: '1',
-    title_vi: 'Frontend React Developer',
-    title_en: 'Frontend React Developer',
-    location_vi: 'Hà Nội / Hybrid',
-    location_en: 'Hanoi / Hybrid',
-    type_vi: 'Toàn thời gian',
-    type_en: 'Full-time',
-    description_vi:
-      'Tham gia xây dựng website doanh nghiệp, landing page, dashboard quản trị và trải nghiệm frontend hiện đại với React, TypeScript và cloud services.',
-    description_en:
-      'Build corporate websites, landing pages, admin dashboards, and modern frontend experiences using React, TypeScript, and cloud services.',
+    title_vi: '',
+    title_en: '',
+    location_vi: '',
+    location_en: '',
+    type_vi: '',
+    type_en: '',
+    description_vi: '',
+    description_en: '',
     is_active: true,
   },
   {
     id: '2',
-    title_vi: 'Business Analyst / Presales IT',
-    title_en: 'Business Analyst / IT Presales',
-    location_vi: 'Hà Nội',
-    location_en: 'Hanoi',
-    type_vi: 'Bán thời gian / Full-time',
-    type_en: 'Part-time / Full-time',
-    description_vi:
-      'Làm việc với khách hàng để phân tích nhu cầu, viết proposal sơ bộ và hỗ trợ định nghĩa giải pháp công nghệ phù hợp.',
-    description_en:
-      'Work with clients to analyze needs, prepare initial proposals, and help define suitable technology solutions.',
+    title_vi: '',
+    title_en: '',
+    location_vi: '',
+    location_en: '',
+    type_vi: '',
+    type_en: '',
+    description_vi: '',
+    description_en: '',
     is_active: true,
   },
 ];

@@ -4,6 +4,8 @@ import { Navbar } from '@/components/Navbar';
 import { usePublicContent } from '@/hooks/usePublicContent';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { formatDate } from '@/lib/utils';
+import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 
 export function NewsDetailPage() {
   const { slug } = useParams();
@@ -13,11 +15,19 @@ export function NewsDetailPage() {
 
   if (!post) return null;
 
+  const location = useLocation();
+
+  useEffect(() => {
+    if (!location.state?.scrollTo) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [location]);
+
   return (
     <div>
       <Navbar settings={settings} />
       <main className="mx-auto max-w-4xl px-4 py-20 sm:px-6 lg:px-8">
-        <Link to="/" state={{ scrollTo: 'news' }} className="text-sm text-brand-gold">
+        <Link to="/news" state={{ scrollTo: 'news' }} className="text-sm text-brand-gold">
           ← {locale === 'vi' ? 'Quay lại trang chủ' : 'Back to home'}
         </Link>
         <div className="mt-8 overflow-hidden rounded-[2rem] border border-white/10 bg-white/5 p-8">

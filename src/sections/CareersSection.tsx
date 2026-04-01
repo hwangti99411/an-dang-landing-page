@@ -3,6 +3,7 @@ import { BriefcaseBusiness, MapPin } from 'lucide-react';
 import { SectionHeading } from '@/components/SectionHeading';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { JobItem } from '@/types';
+import { Link } from 'react-router-dom';
 
 export function CareersSection({ jobs }: { jobs: JobItem[] }) {
   const { locale } = useLanguage();
@@ -50,12 +51,10 @@ export function CareersSection({ jobs }: { jobs: JobItem[] }) {
             ? 'Gia nhập đội ngũ công nghệ đang tăng tốc.'
             : 'Join a technology team that moves with ambition.'
         }
-        description={
-          ""
-        }
+        description={''}
       />
       <div className="mt-10 grid gap-5 md:grid-cols-2">
-        {jobs.map((job, index) => (
+        {jobs.slice(0, 4).map((job, index) => (
           <motion.article
             key={job.id}
             initial={{ opacity: 0, y: 16 }}
@@ -107,6 +106,17 @@ export function CareersSection({ jobs }: { jobs: JobItem[] }) {
           </motion.article>
         ))}
       </div>
+      {jobs.length > 4 && (
+        <div className="mt-10 text-center">
+          <Link
+            to="/careers/details"
+            state={{ scrollTo: null }}
+            className="inline-flex rounded-full bg-[#f2b544] px-6 py-3 font-semibold text-black"
+          >
+            Xem thêm
+          </Link>
+        </div>
+      )}
     </section>
   );
 }
