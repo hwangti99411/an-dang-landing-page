@@ -251,6 +251,7 @@ export const fallbackJobs: JobItem[] = [
     description_vi: '',
     description_en: '',
     is_active: true,
+    sort: 1,
   },
   {
     id: '2',
@@ -263,5 +264,6 @@ export const fallbackJobs: JobItem[] = [
     description_vi: '',
     description_en: '',
     is_active: true,
+    sort: 2,
   },
 ];
