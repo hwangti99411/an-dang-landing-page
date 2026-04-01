@@ -1,6 +1,5 @@
 import type { SiteSettings } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
-import Logo from '../../public/logo-avatar.jpg';
 
 export function BrandLogo({
   settings,
@@ -36,7 +35,7 @@ export function BrandLogo({
     <div className="flex items-center gap-3">
       <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-gold to-brand-accent text-lg font-black text-brand-dark shadow-glow">
         <img
-          src={Logo}
+          src="/logo-avatar.jpg"
           alt={name}
           className={
             compact ? 'h-10 w-10 rounded-2xl object-cover' : 'h-12 w-12 rounded-2xl object-cover'
