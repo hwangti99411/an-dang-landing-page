@@ -166,9 +166,12 @@ export function ContactSection({ settings }: { settings: SiteSettings }) {
 
         <div className="grid gap-6 xl:grid-cols-2">
           <form onSubmit={submitLead} className="glass rounded-[2rem] p-6">
-            <h3 className="text-xl font-semibold text-white">
-              {locale === 'vi' ? 'Để lại thông tin' : 'Leave your details'}
-            </h3>
+            <div className="flex items-center gap-3 text-white">
+              <Mail className="text-brand-gold" />
+              <h3 className="text-xl font-semibold text-white">
+                {locale === 'vi' ? 'Để lại thông tin' : 'Leave your details'}
+              </h3>
+            </div>
             <div className="mt-5 space-y-3">
               <input
                 className="input"
