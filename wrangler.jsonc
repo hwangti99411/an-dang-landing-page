@@ -11,5 +11,9 @@
   },
   "vars": {
     "VITE_COMPANY_NAME": "Công ty TNHH Công nghệ Quốc tế An Đăng",
+    "SUPABASE_URL": "https://dnlskzzzojgrezxorovp.supabase.co",
+    "SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRubHNrenp6b2pncmV6eG9yb3ZwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDg5Njg2MSwiZXhwIjoyMDkwNDcyODYxfQ.InAYvXj1uvpsLyoPTu6Z9yRM_vL52nNkRAFeYduIkYA",
+    "TELEGRAM_BOT_TOKEN": "8787048603:AAHfHrYADR9Zv4W9CZcGwuGI-eml41-5e7s",
+    "TELEGRAM_CHAT_ID": "6951096677",
   },
 }
