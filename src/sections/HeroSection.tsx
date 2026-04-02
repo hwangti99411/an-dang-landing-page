@@ -44,7 +44,7 @@ export function HeroSection({ settings }: { settings: SiteSettings }) {
             initial={{ opacity: 0, y: 22 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.08 }}
-            className="mt-6 max-w-4xl text-4xl font-semibold leading-tight text-white md:text-6xl"
+            className="mt-6 max-w-2xl text-2xl font-semibold leading-tight tracking-[-0.01em] text-white md:text-[34px] lg:text-[40px]"
           >
             {content.title}
           </motion.h1>
