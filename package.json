@@ -16,7 +16,9 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
+    "@ckeditor/ckeditor5-react": "^11.1.0",
     "@supabase/supabase-js": "^2.50.0",
+    "ckeditor5": "^48.0.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.12",

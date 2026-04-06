@@ -16,6 +16,27 @@ import { uploadPublicFile, uploadJobFile, deleteJobFile } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 import type { SiteSettings } from '@/types';
 
+import { CKEditor } from '@ckeditor/ckeditor5-react';
+import {
+  ClassicEditor,
+  Essentials,
+  Paragraph,
+  Bold,
+  Italic,
+  Link,
+  List,
+  Heading,
+  Image,
+  ImageToolbar,
+  ImageCaption,
+  ImageStyle,
+  ImageResize,
+  ImageUpload,
+  ImageInsert,
+} from 'ckeditor5';
+
+import 'ckeditor5/ckeditor5.css';
+
 type CollectionTab = 'posts' | 'services' | 'testimonials' | 'faqs' | 'jobs';
 type AdminTab = 'site' | CollectionTab;
 type AdminRow = Record<string, string | number | boolean | null> & { id?: string | number };
@@ -316,6 +337,55 @@ function getFieldDescription(key: string, locale: 'vi' | 'en') {
 
 function getFieldLabel(key: string, locale: 'vi' | 'en') {
   return `${key.toUpperCase()} - ${getFieldDescription(key, locale)}`;
+}
+
+class Base64FileUploadAdapter {
+  private loader: any;
+  private reader?: FileReader;
+
+  constructor(loader: any) {
+    this.loader = loader;
+  }
+
+  async upload() {
+    const file = await this.loader.file;
+
+    return new Promise<{ default: string }>((resolve, reject) => {
+      this.reader = new FileReader();
+
+      this.reader.onload = () => {
+        if (typeof this.reader?.result === 'string') {
+          resolve({
+            default: this.reader.result,
+          });
+        } else {
+          reject(new Error('Không đọc được dữ liệu ảnh.'));
+        }
+      };
+
+      this.reader.onerror = () => {
+        reject(new Error('Không thể đọc file ảnh.'));
+      };
+
+      this.reader.onabort = () => {
+        reject(new Error('Đã huỷ chèn ảnh.'));
+      };
+
+      this.reader.readAsDataURL(file);
+    });
+  }
+
+  abort() {
+    if (this.reader && this.reader.readyState === 1) {
+      this.reader.abort();
+    }
+  }
+}
+
+function Base64FileUploadAdapterPlugin(editor: any) {
+  editor.plugins.get('FileRepository').createUploadAdapter = (loader: any) => {
+    return new Base64FileUploadAdapter(loader);
+  };
 }
 
 export function AdminPage() {
@@ -827,7 +897,71 @@ export function AdminPage() {
                           }
                           onWheel={(e) => e.currentTarget.blur()}
                         />
-                      ) : isLargeField(column) ? (
+                      ) : isLargeField(column) && activeTab === 'posts' ? (
+                        <div className="ck-input-wrapper">
+                          <CKEditor
+                            key={`${String(draft.id ?? 'new')}-${column}`}
+                            editor={ClassicEditor}
+                            data={String(draft[column] ?? '')}
+                            config={{
+                              licenseKey: 'GPL',
+                              extraPlugins: [Base64FileUploadAdapterPlugin],
+                              plugins: [
+                                Essentials,
+                                Paragraph,
+                                Bold,
+                                Italic,
+                                Link,
+                                List,
+                                Heading,
+                                Image,
+                                ImageToolbar,
+                                ImageCaption,
+                                ImageStyle,
+                                ImageResize,
+                                ImageUpload,
+                                ImageInsert,
+                              ],
+                              toolbar: [
+                                'undo',
+                                'redo',
+                                '|',
+                                'heading',
+                                '|',
+                                'bold',
+                                'italic',
+                                '|',
+                                'link',
+                                '|',
+                                'bulletedList',
+                                'numberedList',
+                                '|',
+                                'insertImage',
+                              ],
+                              image: {
+                                insert: {
+                                  integrations: ['upload', 'url'],
+                                },
+                                toolbar: [
+                                  'imageTextAlternative',
+                                  'toggleImageCaption',
+                                  '|',
+                                  'imageStyle:inline',
+                                  'imageStyle:block',
+                                  'imageStyle:side',
+                                ],
+                              },
+                            }}
+                            onChange={(_, editor) => {
+                              const value = editor.getData();
+                              setDraft((prev) => ({
+                                ...prev,
+                                [column]: value,
+                              }));
+                            }}
+                          />
+                        </div>
+                      ) : isLargeField(column) && activeTab !== 'posts' ? (
                         <textarea
                           className="input min-h-28"
                           value={String(draft[column] ?? '')}

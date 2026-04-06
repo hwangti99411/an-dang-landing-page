@@ -47,9 +47,13 @@ export function NewsDetailPage() {
           <p className="mt-5 text-lg leading-8 text-white/70">
             {locale === 'vi' ? post.excerpt_vi : post.excerpt_en}
           </p>
-          <div className="mt-10 whitespace-pre-line text-sm leading-8 text-white/75">
-            {locale === 'vi' ? post.content_vi : post.content_en}
-          </div>
+
+          <div
+            className="ck-content mt-10 text-sm leading-8 text-white/75"
+            dangerouslySetInnerHTML={{
+              __html: locale === 'vi' ? post.content_vi : post.content_en,
+            }}
+          />
         </div>
       </main>
       <Footer settings={settings} />
