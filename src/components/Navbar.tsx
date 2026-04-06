@@ -105,13 +105,6 @@ export function Navbar({ settings }: { settings: SiteSettings }) {
               <div className="scale-95">
                 <LanguageToggle />
               </div>
-
-              <button
-                type="button"
-                className="rounded-full bg-[#f4c44f] px-4 py-3 text-sm font-semibold text-black transition hover:scale-[1.02] hover:brightness-105"
-              >
-                {ctaLabel}
-              </button>
             </div>
           </div>
 
@@ -126,6 +119,7 @@ export function Navbar({ settings }: { settings: SiteSettings }) {
                 px-2 py-2
                 [scrollbar-width:none] [-ms-overflow-style:none]
                 [&::-webkit-scrollbar]:hidden
+                justify-center
               "
             >
               {allNavItems.map(([id, label]) => (
@@ -199,13 +193,6 @@ export function Navbar({ settings }: { settings: SiteSettings }) {
 
           <div className="shrink-0 flex items-center gap-3">
             <LanguageToggle />
-
-            <button
-              type="button"
-              className="rounded-full bg-[#f4c44f] px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.02] hover:brightness-105"
-            >
-              {ctaLabel}
-            </button>
           </div>
         </div>
       </div>
@@ -232,13 +219,6 @@ export function Navbar({ settings }: { settings: SiteSettings }) {
                   <div className="w-[102px]">
                     <LanguageToggle />
                   </div>
-
-                  <button
-                    type="button"
-                    className="rounded-full bg-[#f4c44f] px-4 py-3 text-sm font-semibold text-black transition hover:brightness-105"
-                  >
-                    {ctaLabel}
-                  </button>
                 </div>
               </div>
             </div>
