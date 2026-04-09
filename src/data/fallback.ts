@@ -225,6 +225,7 @@ export const fallbackJobs: JobItem[] = [
   //   description_en:
   //     'Build corporate websites, landing pages, admin dashboards, and modern frontend experiences using React, TypeScript, and cloud services.',
   //   is_active: true,
+  //   sort: 1,
   // },
   // {
   //   id: '2',
@@ -239,31 +240,6 @@ export const fallbackJobs: JobItem[] = [
   //   description_en:
   //     'Work with clients to analyze needs, prepare initial proposals, and help define suitable technology solutions.',
   //   is_active: true,
+  //   sort: 2,
   // },
-  {
-    id: '1',
-    title_vi: '',
-    title_en: '',
-    location_vi: '',
-    location_en: '',
-    type_vi: '',
-    type_en: '',
-    description_vi: '',
-    description_en: '',
-    is_active: true,
-    sort: 1,
-  },
-  {
-    id: '2',
-    title_vi: '',
-    title_en: '',
-    location_vi: '',
-    location_en: '',
-    type_vi: '',
-    type_en: '',
-    description_vi: '',
-    description_en: '',
-    is_active: true,
-    sort: 2,
-  },
 ];
