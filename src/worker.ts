@@ -346,9 +346,7 @@ app.post('/api/job-application', async (c) => {
         `Tên ứng viên: ${body.full_name}`,
         `Số liên lạc: ${body.phone}`,
         `Mức lương mong muốn: ${body.expected_salary}`,
-        body.referral_source
-        ? `Nguồn: ${body.referral_source}`
-        : '',
+        body.referral_source ? `Nguồn: ${body.referral_source}` : '',
       ].join('\n'),
     });
 
@@ -369,10 +367,7 @@ app.notFound((c) => c.json({ success: false, message: 'Not Found' }, 404));
 
 app.onError((error, c) => {
   console.error('Worker error:', error);
-  return c.json(
-    { success: false, message: error.message || 'Internal Server Error' },
-    500,
-  );
+  return c.json({ success: false, message: error.message || 'Internal Server Error' }, 500);
 });
 
 export default app;

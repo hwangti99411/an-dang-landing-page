@@ -194,12 +194,16 @@ export function CareersSection({ jobs }: { jobs: JobItem[] }) {
     }
 
     if (!formData.phone.trim()) {
-      toast.error(locale === 'vi' ? 'Vui lòng nhập số liên lạc.' : 'Please enter your phone number.');
+      toast.error(
+        locale === 'vi' ? 'Vui lòng nhập số liên lạc.' : 'Please enter your phone number.',
+      );
       return;
     }
 
     if (!formData.expectedSalaryRaw.trim()) {
-      toast.error(locale === 'vi' ? 'Vui lòng nhập mức lương mong muốn.' : 'Please enter expected salary.');
+      toast.error(
+        locale === 'vi' ? 'Vui lòng nhập mức lương mong muốn.' : 'Please enter expected salary.',
+      );
       return;
     }
 
@@ -212,12 +216,18 @@ export function CareersSection({ jobs }: { jobs: JobItem[] }) {
     const fileExtension = formData.cvFile.name.split('.').pop()?.toLowerCase() || '';
 
     if (!allowedExtensions.includes(fileExtension)) {
-      toast.error(locale === 'vi' ? 'Chỉ hỗ trợ file PDF, DOC, DOCX.' : 'Only PDF, DOC, DOCX files are allowed.');
+      toast.error(
+        locale === 'vi'
+          ? 'Chỉ hỗ trợ file PDF, DOC, DOCX.'
+          : 'Only PDF, DOC, DOCX files are allowed.',
+      );
       return;
     }
 
     if (formData.cvFile.size > 5 * 1024 * 1024) {
-      toast.error(locale === 'vi' ? 'File CV không được vượt quá 5MB.' : 'CV file must not exceed 5MB.');
+      toast.error(
+        locale === 'vi' ? 'File CV không được vượt quá 5MB.' : 'CV file must not exceed 5MB.',
+      );
       return;
     }
 
@@ -486,7 +496,9 @@ export function CareersSection({ jobs }: { jobs: JobItem[] }) {
                   value={formData.phone}
                   onChange={handleInputChange}
                   className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-white/35 focus:border-brand-gold"
-                  placeholder={locale === 'vi' ? 'Nhập số điện thoại/email' : 'Enter your phone number/email'}
+                  placeholder={
+                    locale === 'vi' ? 'Nhập số điện thoại/email' : 'Enter your phone number/email'
+                  }
                 />
               </div>
 
@@ -506,7 +518,9 @@ export function CareersSection({ jobs }: { jobs: JobItem[] }) {
 
               <div>
                 <label className="mb-2 block text-sm text-white/80">
-                  {locale === 'vi' ? 'Nguồn giới thiệu (không bắt buộc)' : 'Referral source (optional)'}
+                  {locale === 'vi'
+                    ? 'Nguồn giới thiệu (không bắt buộc)'
+                    : 'Referral source (optional)'}
                 </label>
                 <input
                   name="referralSource"
@@ -531,7 +545,9 @@ export function CareersSection({ jobs }: { jobs: JobItem[] }) {
                   className="block w-full text-sm text-white file:mr-4 file:rounded-full file:border-0 file:bg-brand-gold file:px-4 file:py-2 file:text-sm file:font-semibold file:text-black hover:file:opacity-90"
                 />
                 <p className="mt-2 text-xs text-white/45">
-                  {locale === 'vi' ? 'Hỗ trợ PDF, DOC, DOCX. Tối đa 5MB.' : 'Supported: PDF, DOC, DOCX. Max 5MB.'}
+                  {locale === 'vi'
+                    ? 'Hỗ trợ PDF, DOC, DOCX. Tối đa 5MB.'
+                    : 'Supported: PDF, DOC, DOCX. Max 5MB.'}
                 </p>
               </div>
 

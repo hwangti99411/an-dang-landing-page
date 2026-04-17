@@ -1,15 +1,6 @@
-import { useEffect, useMemo, useState, useRef } from 'react';
-import {
-  ImagePlus,
-  LoaderCircle,
-  LogOut,
-  Plus,
-  RefreshCcw,
-  Save,
-  Shield,
-  Trash2,
-} from 'lucide-react';
-import { Toaster, toast } from 'sonner';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ImagePlus, LoaderCircle, LogOut, Plus, RefreshCcw, Save, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { fallbackSiteSettings } from '@/data/fallback';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { uploadPublicFile, uploadJobFile, deleteJobFile } from '@/lib/storage';
@@ -192,7 +183,6 @@ const fieldDescriptions: Record<string, { vi: string; en: string }> = {
     vi: 'Mô tả SEO của website',
     en: 'Website SEO description',
   },
-
   slug: {
     vi: 'Đường dẫn thân thiện của bài viết',
     en: 'Post URL slug',
@@ -241,7 +231,6 @@ const fieldDescriptions: Record<string, { vi: string; en: string }> = {
     vi: 'Đường dẫn ảnh bìa',
     en: 'Cover image URL',
   },
-
   icon: {
     vi: 'Tên icon sử dụng cho dịch vụ',
     en: 'Icon name for service',
@@ -254,7 +243,6 @@ const fieldDescriptions: Record<string, { vi: string; en: string }> = {
     vi: 'Mô tả tiếng Anh',
     en: 'English description',
   },
-
   name: {
     vi: 'Tên người đánh giá',
     en: 'Reviewer name',
@@ -279,7 +267,6 @@ const fieldDescriptions: Record<string, { vi: string; en: string }> = {
     vi: 'Nội dung feedback tiếng Anh',
     en: 'Feedback content in English',
   },
-
   question_vi: {
     vi: 'Câu hỏi tiếng Việt',
     en: 'Question in Vietnamese',
@@ -296,7 +283,6 @@ const fieldDescriptions: Record<string, { vi: string; en: string }> = {
     vi: 'Câu trả lời tiếng Anh',
     en: 'Answer in English',
   },
-
   location_vi: {
     vi: 'Địa điểm làm việc tiếng Việt',
     en: 'Work location in Vietnamese',
@@ -392,10 +378,6 @@ export function AdminPage() {
   const language = useLanguage();
   const locale = language?.locale ?? 'vi';
   const [activeTab, setActiveTab] = useState<AdminTab>('site');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [sessionReady, setSessionReady] = useState(false);
-  const [loggedIn, setLoggedIn] = useState(false);
   const [_message, setMessage] = useState<string>('');
   const [busy, setBusy] = useState(false);
   const [rows, setRows] = useState<Record<CollectionTab, AdminRow[]>>({
@@ -452,25 +434,10 @@ export function AdminPage() {
     }
   }
 
-  useEffect(() => {
-    if (!supabase) {
-      setSessionReady(true);
-      return;
-    }
-
-    supabase.auth.getSession().then(({ data }) => {
-      setLoggedIn(Boolean(data.session));
-      setSessionReady(true);
-    });
-  }, []);
-
   async function loadSiteSettings() {
     if (!supabase) return;
-    const { data, error } = await supabase
-      .from('site_settings')
-      .select('*')
-      .eq('id', 1)
-      .maybeSingle();
+    const sb = supabase!;
+    const { data, error } = await sb.from('site_settings').select('*').eq('id', 1).maybeSingle();
     if (error) {
       notifyError(error);
       return;
@@ -480,7 +447,8 @@ export function AdminPage() {
 
   async function loadTable(tab: CollectionTab) {
     if (!supabase) return;
-    let query = supabase.from(tab).select('*');
+    const sb = supabase!;
+    let query = sb.from(tab).select('*');
     if (tab === 'posts') {
       query = query.order('published_at', { ascending: false });
     } else if (tab === 'jobs') {
@@ -508,50 +476,32 @@ export function AdminPage() {
   }
 
   useEffect(() => {
-    if (loggedIn) {
-      void refreshAll();
-    }
-  }, [loggedIn]);
+    void refreshAll();
+  }, []);
 
   useEffect(() => {
     if (activeTab !== 'site') setDraft(defaultRows[activeTab]);
   }, [activeTab]);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!supabase) {
-      notifyError('Missing Supabase environment variables.');
-      return;
-    }
-    setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setBusy(false);
-    if (error) {
-      notifyError(error);
-      return;
-    }
-    setLoggedIn(true);
-    notifySuccess('Đăng nhập thành công.', 'Logged in successfully.');
-  };
-
   const handleLogout = async () => {
     if (!supabase) return;
-    await supabase.auth.signOut();
-    setLoggedIn(false);
-    notifySuccess('Đăng xuất thành công.', 'Logged out successfully.');
+    const sb = supabase!;
+    await sb.auth.signOut();
+    window.location.reload();
   };
 
   const saveCollectionDraft = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!supabase || activeTab === 'site') return;
 
+    const sb = supabase!;
     setBusy(true);
     const table = activeTab;
     const payload = { ...draft };
 
     const query = draft.id
-      ? supabase.from(table).update(payload).eq('id', draft.id)
-      : supabase.from(table).insert(payload);
+      ? sb.from(table).update(payload).eq('id', draft.id)
+      : sb.from(table).insert(payload);
 
     const { error } = await query;
     setBusy(false);
@@ -571,8 +521,9 @@ export function AdminPage() {
   const saveSiteSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!supabase) return;
+    const sb = supabase!;
     setBusy(true);
-    const { error } = await supabase
+    const { error } = await sb
       .from('site_settings')
       .upsert({ ...siteDraft, id: 1 }, { onConflict: 'id' });
     setBusy(false);
@@ -590,7 +541,8 @@ export function AdminPage() {
 
   const deleteRow = async (table: CollectionTab, id?: string | number) => {
     if (!supabase || !id) return;
-    const { error } = await supabase.from(table).delete().eq('id', id);
+    const sb = supabase!;
+    const { error } = await sb.from(table).delete().eq('id', id);
     if (error) {
       notifyError(error);
       return;
@@ -624,7 +576,7 @@ export function AdminPage() {
         try {
           await deleteJobFile(oldPath);
         } catch {
-          // bỏ qua nếu file cũ xoá lỗi
+          // bỏ qua
         }
       }
 
@@ -673,495 +625,437 @@ export function AdminPage() {
     }
   };
 
-  if (!sessionReady) {
-    return (
-      <div className="flex min-h-screen items-center justify-center text-white">
-        <Toaster position="top-right" richColors />
-        Loading...
-      </div>
-    );
-  }
-
-  if (!loggedIn) {
-    return (
-      <>
-        <Toaster position="top-right" richColors />
-        <div className="flex min-h-screen items-center justify-center px-4">
-          <div className="glass w-full max-w-md rounded-[2rem] p-8">
-            <div className="mb-6 flex items-center gap-3 text-brand-gold">
-              <Shield size={22} />
-              <div>
-                <div className="text-sm uppercase tracking-[0.25em]">Admin</div>
-                <div className="text-xl font-semibold text-white">An Đăng CMS</div>
-              </div>
-            </div>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <input
-                className="input"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                type="email"
-                required
-              />
-              <input
-                className="input"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                type="password"
-                required
-              />
-              <button className="btn-primary w-full justify-center" disabled={busy}>
-                {busy ? '...' : locale === 'vi' ? 'Đăng nhập' : 'Login'}
-              </button>
-            </form>
+  return (
+    <div className="min-h-screen bg-[#080304] px-4 py-8 text-white sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="text-xs uppercase tracking-[0.35em] text-brand-gold">Admin CMS</div>
+            <h1 className="mt-2 text-3xl font-semibold">An Đăng - Content Manager</h1>
+            <p className="mt-2 text-sm text-white/60">
+              {locale === 'vi'
+                ? 'Quản trị Hero, About, Footer, logo doanh nghiệp, bài viết, dịch vụ, feedback và FAQ.'
+                : 'Manage Hero, About, Footer, company logo, posts, services, testimonials, and FAQ.'}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <button className="btn-secondary gap-2" onClick={() => void refreshAll()}>
+              <RefreshCcw size={16} />
+              Reload
+            </button>
+            <button className="btn-secondary gap-2" onClick={handleLogout}>
+              <LogOut size={16} />
+              Logout
+            </button>
           </div>
         </div>
-      </>
-    );
-  }
 
-  return (
-    <>
-      <Toaster position="top-right" richColors />
-      <div className="min-h-screen bg-[#080304] px-4 py-8 text-white sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <div className="text-xs uppercase tracking-[0.35em] text-brand-gold">Admin CMS</div>
-              <h1 className="mt-2 text-3xl font-semibold">An Đăng - Content Manager</h1>
-              <p className="mt-2 text-sm text-white/60">
-                {locale === 'vi'
-                  ? 'Quản trị Hero, About, Footer, logo doanh nghiệp, bài viết, dịch vụ, feedback và FAQ.'
-                  : 'Manage Hero, About, Footer, company logo, posts, services, testimonials, and FAQ.'}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <button className="btn-secondary gap-2" onClick={() => void refreshAll()}>
-                <RefreshCcw size={16} />
-                Reload
-              </button>
-              <button className="btn-secondary gap-2" onClick={handleLogout}>
-                <LogOut size={16} />
-                Logout
-              </button>
-            </div>
-          </div>
+        <div className="mb-6 flex flex-wrap gap-2">
+          {(Object.keys(tabLabels) as AdminTab[]).map((tab) => (
+            <button
+              key={tab}
+              className={`rounded-full px-4 py-2 text-sm ${
+                activeTab === tab ? 'bg-brand-gold text-brand-dark' : 'bg-white/5 text-white/70'
+              }`}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tabLabels[tab][locale]}
+            </button>
+          ))}
+        </div>
 
-          <div className="mb-6 flex flex-wrap gap-2">
-            {(Object.keys(tabLabels) as AdminTab[]).map((tab) => (
-              <button
-                key={tab}
-                className={`rounded-full px-4 py-2 text-sm ${
-                  activeTab === tab ? 'bg-brand-gold text-brand-dark' : 'bg-white/5 text-white/70'
-                }`}
-                onClick={() => setActiveTab(tab)}
-              >
-                {tabLabels[tab][locale]}
-              </button>
-            ))}
-          </div>
+        {activeTab === 'site' ? (
+          <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+            <form onSubmit={saveSiteSettings} className="glass rounded-[2rem] p-5">
+              <div className="grid gap-3 md:grid-cols-2">
+                {Object.entries(siteDraft).map(([key, value]) => {
+                  if (key === 'id') return null;
+                  return (
+                    <div key={key} className={isLargeField(key) ? 'md:col-span-2' : ''}>
+                      <label className="mb-1 block text-xs uppercase tracking-[0.2em] text-white/45">
+                        {getFieldLabel(key, locale)}
+                      </label>
+                      {isLargeField(key) ? (
+                        <textarea
+                          className="input min-h-28"
+                          value={String(value ?? '')}
+                          onChange={(e) =>
+                            setSiteDraft(
+                              (prev) =>
+                                ({
+                                  ...(prev as SiteSettings),
+                                  [key]: e.target.value,
+                                }) as SiteSettings,
+                            )
+                          }
+                        />
+                      ) : (
+                        <input
+                          className="input"
+                          value={String(value ?? '')}
+                          onChange={(e) =>
+                            setSiteDraft(
+                              (prev) =>
+                                ({
+                                  ...(prev as SiteSettings),
+                                  [key]: e.target.value,
+                                }) as SiteSettings,
+                            )
+                          }
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <label className="btn-secondary cursor-pointer gap-2">
+                  <ImagePlus size={16} />
+                  {locale === 'vi' ? 'Upload logo' : 'Upload logo'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) =>
+                      e.target.files?.[0] && void uploadAsset(e.target.files[0], 'logo')
+                    }
+                  />
+                </label>
+                <button className="btn-primary gap-2" disabled={busy}>
+                  <Save size={16} />
+                  {locale === 'vi' ? 'Lưu site settings' : 'Save site settings'}
+                </button>
+              </div>
+            </form>
 
-          {activeTab === 'site' ? (
-            <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-              <form onSubmit={saveSiteSettings} className="glass rounded-[2rem] p-5">
-                <div className="grid gap-3 md:grid-cols-2">
-                  {Object.entries(siteDraft).map(([key, value]) => {
-                    if (key === 'id') return null;
-                    return (
-                      <div key={key} className={isLargeField(key) ? 'md:col-span-2' : ''}>
-                        <label className="mb-1 block text-xs uppercase tracking-[0.2em] text-white/45">
-                          {getFieldLabel(key, locale)}
-                        </label>
-                        {isLargeField(key) ? (
-                          <textarea
-                            className="input min-h-28"
-                            value={String(value ?? '')}
-                            onChange={(e) =>
-                              setSiteDraft(
-                                (prev) =>
-                                  ({
-                                    ...(prev as SiteSettings),
-                                    [key]: e.target.value,
-                                  }) as SiteSettings,
-                              )
-                            }
-                          />
-                        ) : (
-                          <input
-                            className="input"
-                            value={String(value ?? '')}
-                            onChange={(e) =>
-                              setSiteDraft(
-                                (prev) =>
-                                  ({
-                                    ...(prev as SiteSettings),
-                                    [key]: e.target.value,
-                                  }) as SiteSettings,
-                              )
-                            }
-                          />
-                        )}
-                      </div>
-                    );
-                  })}
+            <div className="glass rounded-[2rem] p-5">
+              <div className="text-sm uppercase tracking-[0.2em] text-brand-gold">Preview</div>
+              <div className="mt-4 overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
+                {siteDraft.logo_url ? (
+                  <img
+                    src={siteDraft.logo_url}
+                    alt={siteDraft.brand_name}
+                    className="h-16 w-16 rounded-2xl object-cover"
+                  />
+                ) : (
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-gold to-brand-accent font-black text-brand-dark">
+                    AD
+                  </div>
+                )}
+                <div className="mt-4 text-xs uppercase tracking-[0.3em] text-brand-gold">
+                  {siteDraft.brand_name}
                 </div>
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <label className="btn-secondary cursor-pointer gap-2">
+                <div className="mt-3 text-2xl font-semibold">
+                  {locale === 'vi' ? siteDraft.hero_title_vi : siteDraft.hero_title_en}
+                </div>
+                <div className="mt-3 text-sm leading-7 text-white/70">
+                  {locale === 'vi' ? siteDraft.hero_description_vi : siteDraft.hero_description_en}
+                </div>
+                <div className="mt-5 rounded-2xl border border-white/10 p-4 text-sm text-white/65">
+                  {locale === 'vi' ? siteDraft.footer_summary_vi : siteDraft.footer_summary_en}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+            <div className="glass rounded-[2rem] p-5">
+              <form onSubmit={saveCollectionDraft} className="space-y-3">
+                {collectionColumns.map((column) => (
+                  <div key={column}>
+                    <label className="mb-1 block text-xs uppercase tracking-[0.2em] text-white/45">
+                      {getFieldLabel(column, locale)}
+                    </label>
+
+                    {typeof defaultRows[activeTab][column] === 'boolean' ? (
+                      <select
+                        className="input"
+                        value={String(Boolean(draft[column]))}
+                        onChange={(e) =>
+                          setDraft({ ...draft, [column]: e.target.value === 'true' })
+                        }
+                      >
+                        <option value="true">true</option>
+                        <option value="false">false</option>
+                      </select>
+                    ) : column === 'sort' ? (
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        className="input"
+                        value={
+                          draft[column] === null || draft[column] === undefined
+                            ? ''
+                            : String(draft[column])
+                        }
+                        onChange={(e) =>
+                          setDraft({
+                            ...draft,
+                            [column]: e.target.value === '' ? '' : Number(e.target.value),
+                          })
+                        }
+                        onWheel={(e) => e.currentTarget.blur()}
+                      />
+                    ) : isLargeField(column) && activeTab === 'posts' ? (
+                      <div className="ck-input-wrapper">
+                        <CKEditor
+                          key={`${String(draft.id ?? 'new')}-${column}`}
+                          editor={ClassicEditor}
+                          data={String(draft[column] ?? '')}
+                          config={{
+                            licenseKey: 'GPL',
+                            extraPlugins: [Base64FileUploadAdapterPlugin],
+                            plugins: [
+                              Essentials,
+                              Paragraph,
+                              Bold,
+                              Italic,
+                              Link,
+                              List,
+                              Heading,
+                              Image,
+                              ImageToolbar,
+                              ImageCaption,
+                              ImageStyle,
+                              ImageResize,
+                              ImageUpload,
+                              ImageInsert,
+                            ],
+                            toolbar: [
+                              'undo',
+                              'redo',
+                              '|',
+                              'heading',
+                              '|',
+                              'bold',
+                              'italic',
+                              '|',
+                              'link',
+                              '|',
+                              'bulletedList',
+                              'numberedList',
+                              '|',
+                              'insertImage',
+                            ],
+                            image: {
+                              insert: {
+                                integrations: ['upload', 'url'],
+                              },
+                              toolbar: [
+                                'imageTextAlternative',
+                                'toggleImageCaption',
+                                '|',
+                                'imageStyle:inline',
+                                'imageStyle:block',
+                                'imageStyle:side',
+                              ],
+                            },
+                          }}
+                          onChange={(_, editor) => {
+                            const value = editor.getData();
+                            setDraft((prev) => ({
+                              ...prev,
+                              [column]: value,
+                            }));
+                          }}
+                        />
+                      </div>
+                    ) : isLargeField(column) ? (
+                      <textarea
+                        className="input min-h-28"
+                        value={String(draft[column] ?? '')}
+                        onChange={(e) => setDraft({ ...draft, [column]: e.target.value })}
+                      />
+                    ) : (
+                      <input
+                        className="input"
+                        value={String(draft[column] ?? '')}
+                        onChange={(e) => setDraft({ ...draft, [column]: e.target.value })}
+                      />
+                    )}
+                  </div>
+                ))}
+
+                {activeTab === 'posts' && (
+                  <label className="btn-secondary inline-flex cursor-pointer gap-2">
                     <ImagePlus size={16} />
-                    {locale === 'vi' ? 'Upload logo' : 'Upload logo'}
+                    {locale === 'vi' ? 'Upload ảnh cover bài viết' : 'Upload post cover image'}
                     <input
                       type="file"
                       accept="image/*"
                       className="hidden"
                       onChange={(e) =>
-                        e.target.files?.[0] && void uploadAsset(e.target.files[0], 'logo')
+                        e.target.files?.[0] && void uploadAsset(e.target.files[0], 'post-cover')
                       }
                     />
                   </label>
+                )}
+
+                {activeTab === 'jobs' && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="mb-2 block text-sm text-white/70">
+                        {getFieldLabel('jd_file_url', locale)} (PDF/DOCX)
+                      </label>
+                      <input
+                        ref={jobFileInputRef}
+                        type="file"
+                        accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) void uploadJobAsset(file);
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm text-white/70">
+                        {getFieldLabel('jd_file_url', locale)}
+                      </label>
+                      <input
+                        className="input"
+                        disabled
+                        value={String(draft.jd_file_url ?? '')}
+                        readOnly
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm text-white/70">
+                        {getFieldLabel('apply_url', locale)}
+                      </label>
+                      <input
+                        className="input"
+                        disabled
+                        value={String(draft.apply_url ?? '')}
+                        readOnly
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap gap-3">
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        onClick={() => void removeJobAsset()}
+                        disabled={busy || !draft.jd_file_path}
+                      >
+                        {locale === 'vi' ? 'Xoá file JD' : 'Delete JD file'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex flex-wrap gap-3 pt-2">
                   <button className="btn-primary gap-2" disabled={busy}>
-                    <Save size={16} />
-                    {locale === 'vi' ? 'Lưu site settings' : 'Save site settings'}
+                    {busy ? (
+                      <LoaderCircle size={16} className="animate-spin" />
+                    ) : (
+                      <Plus size={16} />
+                    )}
+                    {draft.id
+                      ? locale === 'vi'
+                        ? 'Cập nhật'
+                        : 'Update'
+                      : locale === 'vi'
+                        ? 'Tạo mới'
+                        : 'Create'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => {
+                      setDraft(defaultRows[activeTab]);
+                      if (activeTab === 'jobs' && jobFileInputRef.current) {
+                        jobFileInputRef.current.value = '';
+                      }
+                      notifyInfo('Đã làm mới form.', 'Form reset successfully.');
+                    }}
+                  >
+                    {locale === 'vi' ? 'Làm mới form' : 'Reset form'}
                   </button>
                 </div>
               </form>
-
-              <div className="glass rounded-[2rem] p-5">
-                <div className="text-sm uppercase tracking-[0.2em] text-brand-gold">Preview</div>
-                <div className="mt-4 overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
-                  {siteDraft.logo_url ? (
-                    <img
-                      src={siteDraft.logo_url}
-                      alt={siteDraft.brand_name}
-                      className="h-16 w-16 rounded-2xl object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-gold to-brand-accent font-black text-brand-dark">
-                      AD
-                    </div>
-                  )}
-                  <div className="mt-4 text-xs uppercase tracking-[0.3em] text-brand-gold">
-                    {siteDraft.brand_name}
-                  </div>
-                  <div className="mt-3 text-2xl font-semibold">
-                    {locale === 'vi' ? siteDraft.hero_title_vi : siteDraft.hero_title_en}
-                  </div>
-                  <div className="mt-3 text-sm leading-7 text-white/70">
-                    {locale === 'vi'
-                      ? siteDraft.hero_description_vi
-                      : siteDraft.hero_description_en}
-                  </div>
-                  <div className="mt-5 rounded-2xl border border-white/10 p-4 text-sm text-white/65">
-                    {locale === 'vi' ? siteDraft.footer_summary_vi : siteDraft.footer_summary_en}
-                  </div>
-                </div>
-              </div>
             </div>
-          ) : (
-            <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-              <div className="glass rounded-[2rem] p-5">
-                <form onSubmit={saveCollectionDraft} className="space-y-3">
-                  {collectionColumns.map((column) => (
-                    <div key={column}>
-                      <label className="mb-1 block text-xs uppercase tracking-[0.2em] text-white/45">
-                        {getFieldLabel(column, locale)}
-                      </label>
 
-                      {typeof defaultRows[activeTab][column] === 'boolean' ? (
-                        <select
-                          className="input"
-                          value={String(Boolean(draft[column]))}
-                          onChange={(e) =>
-                            setDraft({ ...draft, [column]: e.target.value === 'true' })
-                          }
-                        >
-                          <option value="true">true</option>
-                          <option value="false">false</option>
-                        </select>
-                      ) : column === 'sort' ? (
-                        <input
-                          type="number"
-                          inputMode="numeric"
-                          className="input"
-                          value={
-                            draft[column] === null || draft[column] === undefined
-                              ? ''
-                              : String(draft[column])
-                          }
-                          onChange={(e) =>
-                            setDraft({
-                              ...draft,
-                              [column]: e.target.value === '' ? '' : Number(e.target.value),
-                            })
-                          }
-                          onWheel={(e) => e.currentTarget.blur()}
-                        />
-                      ) : isLargeField(column) && activeTab === 'posts' ? (
-                        <div className="ck-input-wrapper">
-                          <CKEditor
-                            key={`${String(draft.id ?? 'new')}-${column}`}
-                            editor={ClassicEditor}
-                            data={String(draft[column] ?? '')}
-                            config={{
-                              licenseKey: 'GPL',
-                              extraPlugins: [Base64FileUploadAdapterPlugin],
-                              plugins: [
-                                Essentials,
-                                Paragraph,
-                                Bold,
-                                Italic,
-                                Link,
-                                List,
-                                Heading,
-                                Image,
-                                ImageToolbar,
-                                ImageCaption,
-                                ImageStyle,
-                                ImageResize,
-                                ImageUpload,
-                                ImageInsert,
-                              ],
-                              toolbar: [
-                                'undo',
-                                'redo',
-                                '|',
-                                'heading',
-                                '|',
-                                'bold',
-                                'italic',
-                                '|',
-                                'link',
-                                '|',
-                                'bulletedList',
-                                'numberedList',
-                                '|',
-                                'insertImage',
-                              ],
-                              image: {
-                                insert: {
-                                  integrations: ['upload', 'url'],
-                                },
-                                toolbar: [
-                                  'imageTextAlternative',
-                                  'toggleImageCaption',
-                                  '|',
-                                  'imageStyle:inline',
-                                  'imageStyle:block',
-                                  'imageStyle:side',
-                                ],
-                              },
-                            }}
-                            onChange={(_, editor) => {
-                              const value = editor.getData();
-                              setDraft((prev) => ({
-                                ...prev,
-                                [column]: value,
-                              }));
-                            }}
-                          />
-                        </div>
-                      ) : isLargeField(column) && activeTab !== 'posts' ? (
-                        <textarea
-                          className="input min-h-28"
-                          value={String(draft[column] ?? '')}
-                          onChange={(e) => setDraft({ ...draft, [column]: e.target.value })}
-                        />
-                      ) : (
-                        <input
-                          className="input"
-                          value={String(draft[column] ?? '')}
-                          onChange={(e) => setDraft({ ...draft, [column]: e.target.value })}
-                        />
-                      )}
-                    </div>
-                  ))}
-
-                  {activeTab === 'posts' && (
-                    <label className="btn-secondary inline-flex cursor-pointer gap-2">
-                      <ImagePlus size={16} />
-                      {locale === 'vi' ? 'Upload ảnh cover bài viết' : 'Upload post cover image'}
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) =>
-                          e.target.files?.[0] && void uploadAsset(e.target.files[0], 'post-cover')
-                        }
-                      />
-                    </label>
-                  )}
-
-                  {activeTab === 'jobs' && (
-                    <div className="space-y-4">
-                      <div>
-                        <label className="mb-2 block text-sm text-white/70">
-                          {getFieldLabel('jd_file_url', locale)} (PDF/DOCX)
-                        </label>
-                        <input
-                          ref={jobFileInputRef}
-                          type="file"
-                          accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) void uploadJobAsset(file);
-                          }}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="mb-2 block text-sm text-white/70">
-                          {getFieldLabel('jd_file_url', locale)}
-                        </label>
-                        <input
-                          className="input"
-                          disabled
-                          value={String(draft.jd_file_url ?? '')}
-                          onChange={(e) =>
-                            setDraft((prev: any) => ({ ...prev, jd_file_url: e.target.value }))
-                          }
-                        />
-                      </div>
-
-                      <div>
-                        <label className="mb-2 block text-sm text-white/70">
-                          {getFieldLabel('apply_url', locale)}
-                        </label>
-                        <input
-                          className="input"
-                          disabled
-                          value={String(draft.apply_url ?? '')}
-                          onChange={(e) =>
-                            setDraft((prev: any) => ({ ...prev, apply_url: e.target.value }))
-                          }
-                        />
-                      </div>
-
-                      <div className="flex flex-wrap gap-3">
-                        <button
-                          type="button"
-                          className="btn-secondary"
-                          onClick={() => void removeJobAsset()}
-                          disabled={busy || !draft.jd_file_path}
-                        >
-                          {locale === 'vi' ? 'Xoá file JD' : 'Delete JD file'}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex flex-wrap gap-3 pt-2">
-                    <button className="btn-primary gap-2" disabled={busy}>
-                      {busy ? (
-                        <LoaderCircle size={16} className="animate-spin" />
-                      ) : (
-                        <Plus size={16} />
-                      )}
-                      {draft.id
-                        ? locale === 'vi'
-                          ? 'Cập nhật'
-                          : 'Update'
-                        : locale === 'vi'
-                          ? 'Tạo mới'
-                          : 'Create'}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-secondary"
-                      onClick={() => {
-                        setDraft(defaultRows[activeTab]);
-                        if (activeTab === 'jobs' && jobFileInputRef.current) {
-                          jobFileInputRef.current.value = '';
-                        }
-                        notifyInfo('Đã làm mới form.', 'Form reset successfully.');
-                      }}
-                    >
-                      {locale === 'vi' ? 'Làm mới form' : 'Reset form'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-
-              <div className="glass overflow-hidden rounded-[2rem] p-5">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-left text-sm">
-                    <thead className="text-white/45">
-                      <tr>
-                        <th className="pb-3 pr-4">ID</th>
-                        <th className="pb-3 pr-4">Sort</th>
-                        <th className="pb-3 pr-4">Preview</th>
-                        <th className="pb-3">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rows[activeTab].map((row) => (
-                        <tr key={String(row.id)} className="border-t border-white/8 align-top">
-                          <td className="py-4 pr-4 text-white/40">{String(row.id).slice(0, 8)}</td>
-                          <td className="py-4 pr-4 text-white/70">{String(row.sort ?? '')}</td>
-                          <td className="py-4 pr-4 text-white/75">
-                            <div className="font-medium text-white">
-                              {String(
-                                'title_vi' in row
-                                  ? row.title_vi
-                                  : 'name' in row
-                                    ? row.name
-                                    : 'question_vi' in row
-                                      ? row.question_vi
+            <div className="glass overflow-hidden rounded-[2rem] p-5">
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="text-white/45">
+                    <tr>
+                      <th className="pb-3 pr-4">ID</th>
+                      <th className="pb-3 pr-4">Sort</th>
+                      <th className="pb-3 pr-4">Preview</th>
+                      <th className="pb-3">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows[activeTab].map((row) => (
+                      <tr key={String(row.id)} className="border-t border-white/8 align-top">
+                        <td className="py-4 pr-4 text-white/40">{String(row.id).slice(0, 8)}</td>
+                        <td className="py-4 pr-4 text-white/70">{String(row.sort ?? '')}</td>
+                        <td className="py-4 pr-4 text-white/75">
+                          <div className="font-medium text-white">
+                            {String(
+                              'title_vi' in row
+                                ? row.title_vi
+                                : 'name' in row
+                                  ? row.name
+                                  : 'question_vi' in row
+                                    ? row.question_vi
+                                    : '',
+                            )}
+                          </div>
+                          {'cover_url' in row &&
+                            typeof row.cover_url === 'string' &&
+                            row.cover_url && (
+                              <img
+                                src={row.cover_url}
+                                alt="cover"
+                                className="mt-3 h-20 w-28 rounded-xl object-cover"
+                              />
+                            )}
+                          <div className="mt-1 max-w-xl text-xs leading-6 text-white/45">
+                            {String(
+                              'excerpt_vi' in row
+                                ? row.excerpt_vi
+                                : 'description_vi' in row
+                                  ? row.description_vi
+                                  : 'quote_vi' in row
+                                    ? row.quote_vi
+                                    : 'answer_vi' in row
+                                      ? row.answer_vi
                                       : '',
-                              )}
-                            </div>
-                            {'cover_url' in row &&
-                              typeof row.cover_url === 'string' &&
-                              row.cover_url && (
-                                <img
-                                  src={row.cover_url}
-                                  alt="cover"
-                                  className="mt-3 h-20 w-28 rounded-xl object-cover"
-                                />
-                              )}
-                            <div className="mt-1 max-w-xl text-xs leading-6 text-white/45">
-                              {String(
-                                'excerpt_vi' in row
-                                  ? row.excerpt_vi
-                                  : 'description_vi' in row
-                                    ? row.description_vi
-                                    : 'quote_vi' in row
-                                      ? row.quote_vi
-                                      : 'answer_vi' in row
-                                        ? row.answer_vi
-                                        : '',
-                              )}
-                            </div>
-                          </td>
-                          <td className="py-4">
-                            <div className="flex gap-2">
-                              <button
-                                className="rounded-full bg-white/5 px-3 py-1 text-xs"
-                                onClick={() => editRow(row)}
-                              >
-                                {locale === 'vi' ? 'Sửa' : 'Edit'}
-                              </button>
-                              <button
-                                className="rounded-full bg-red-500/15 px-3 py-1 text-xs text-red-200"
-                                onClick={() => void deleteRow(activeTab, row.id)}
-                              >
-                                <span className="inline-flex items-center gap-1">
-                                  <Trash2 size={12} />
-                                  {locale === 'vi' ? 'Xoá' : 'Delete'}
-                                </span>
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-4">
+                          <div className="flex gap-2">
+                            <button
+                              className="rounded-full bg-white/5 px-3 py-1 text-xs"
+                              onClick={() => editRow(row)}
+                            >
+                              {locale === 'vi' ? 'Sửa' : 'Edit'}
+                            </button>
+                            <button
+                              className="rounded-full bg-red-500/15 px-3 py-1 text-xs text-red-200"
+                              onClick={() => void deleteRow(activeTab, row.id)}
+                            >
+                              <span className="inline-flex items-center gap-1">
+                                <Trash2 size={12} />
+                                {locale === 'vi' ? 'Xoá' : 'Delete'}
+                              </span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
-    </>
+    </div>
   );
 }
