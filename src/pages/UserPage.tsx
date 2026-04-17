@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { LogOut, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 type TruthOrDareCard = {
   id: number;
@@ -136,7 +137,7 @@ export function UserPage() {
       .order('created_at', { ascending: false });
 
     if (error) {
-      alert(error.message);
+      toast.error(error.message);
       return;
     }
 
@@ -151,12 +152,12 @@ export function UserPage() {
     e.preventDefault();
 
     if (!draft.truth_text.trim() || !draft.dare_text.trim()) {
-      alert('Vui lòng nhập đủ Truth và Dare');
+      toast.warning('Vui lòng nhập đủ Truth và Dare');
       return;
     }
 
     if (!supabase) {
-      alert('Supabase chưa được cấu hình.');
+      toast.error('Supabase chưa được cấu hình.');
       return;
     }
 
@@ -171,7 +172,7 @@ export function UserPage() {
       } = await sb.auth.getUser();
 
       if (userError || !user) {
-        alert('Không tìm thấy thông tin đăng nhập.');
+        toast.error('Không tìm thấy thông tin đăng nhập.');
         return;
       }
 
@@ -183,7 +184,7 @@ export function UserPage() {
       });
 
       if (error) {
-        alert(error.message);
+        toast.error(error.message);
         return;
       }
 
