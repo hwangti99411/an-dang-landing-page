@@ -34,6 +34,16 @@ type BookingPayload = {
   locale?: string;
 };
 
+type JobApplicationPayload = {
+  full_name?: string;
+  phone?: string;
+  expected_salary?: string;
+  job_id?: string;
+  job_title?: string;
+  locale?: string;
+  referral_source?: string;
+};
+
 const app = new Hono<{ Bindings: Bindings }>();
 
 app.use(
@@ -53,7 +63,7 @@ app.use(
 
 async function saveToSupabase(
   env: Bindings,
-  table: 'leads' | 'bookings',
+  table: 'leads' | 'bookings' | 'job_applications',
   payload: Record<string, unknown>,
 ) {
   const response = await fetch(`${env.SUPABASE_URL}/rest/v1/${table}`, {
@@ -108,7 +118,10 @@ async function sendToExternal(env: Bindings, payload: Record<string, unknown>) {
 }
 
 async function sendTelegram(env: Bindings, message: string) {
-  if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) return;
+  if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) {
+    console.warn('Telegram env missing, skip sendMessage');
+    return;
+  }
 
   const response = await fetch(
     `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`,
@@ -124,6 +137,36 @@ async function sendTelegram(env: Bindings, message: string) {
 
   if (!response.ok) {
     throw new Error(`Telegram send failed: ${await response.text()}`);
+  }
+}
+
+async function sendTelegramDocument(
+  env: Bindings,
+  options: {
+    caption: string;
+    file: File;
+  },
+) {
+  if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) {
+    console.warn('Telegram env missing, skip sendDocument');
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('chat_id', env.TELEGRAM_CHAT_ID);
+  formData.append('caption', options.caption);
+  formData.append('document', options.file, options.file.name);
+
+  const response = await fetch(
+    `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendDocument`,
+    {
+      method: 'POST',
+      body: formData,
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(`Telegram sendDocument failed: ${await response.text()}`);
   }
 }
 
@@ -228,11 +271,108 @@ app.post('/api/booking', async (c) => {
   return c.json({ success: true });
 });
 
-app.notFound((c) => c.json({ message: 'Not Found' }, 404));
+app.post('/api/job-application', async (c) => {
+  try {
+    const formData = await c.req.formData();
+
+    const body: JobApplicationPayload = {
+      full_name: String(formData.get('full_name') ?? ''),
+      phone: String(formData.get('phone') ?? ''),
+      expected_salary: String(formData.get('expected_salary') ?? ''),
+      job_id: String(formData.get('job_id') ?? ''),
+      job_title: String(formData.get('job_title') ?? ''),
+      locale: String(formData.get('locale') ?? 'vi'),
+      referral_source: String(formData.get('referral_source') ?? ''),
+    };
+
+    const cvFile = formData.get('cv_file');
+
+    if (
+      !body.full_name?.trim() ||
+      !body.phone?.trim() ||
+      !body.expected_salary?.trim() ||
+      !body.job_title?.trim()
+    ) {
+      return c.json({ success: false, message: 'Thiếu thông tin bắt buộc' }, 400);
+    }
+
+    if (!(cvFile instanceof File)) {
+      return c.json({ success: false, message: 'Vui lòng tải lên file CV' }, 400);
+    }
+
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ];
+
+    if (!allowedTypes.includes(cvFile.type)) {
+      return c.json(
+        {
+          success: false,
+          message: `Chỉ chấp nhận file PDF, DOC, DOCX. File hiện tại: ${cvFile.type || 'unknown'}`,
+        },
+        400,
+      );
+    }
+
+    const maxSize = 5 * 1024 * 1024;
+    if (cvFile.size > maxSize) {
+      return c.json({ success: false, message: 'File CV vượt quá 5MB' }, 400);
+    }
+
+    const payload = {
+      full_name: body.full_name,
+      phone: body.phone,
+      expected_salary: body.expected_salary,
+      job_id: body.job_id,
+      job_title: body.job_title,
+      locale: body.locale,
+      referral_source: body.referral_source || null,
+      cv_file_name: cvFile.name,
+      cv_file_type: cvFile.type,
+      source: 'careers-page',
+      created_at: new Date().toISOString(),
+    };
+
+    await saveToSupabase(c.env, 'job_applications', payload);
+
+    await sendTelegramDocument(c.env, {
+      file: cvFile,
+      caption: [
+        '📥 ỨNG TUYỂN MỚI',
+        `Vị trí ứng tuyển: ${body.job_title}`,
+        `Job ID: ${body.job_id || ''}`,
+        `Tên ứng viên: ${body.full_name}`,
+        `Số liên lạc: ${body.phone}`,
+        `Mức lương mong muốn: ${body.expected_salary}`,
+        body.referral_source
+        ? `Nguồn: ${body.referral_source}`
+        : '',
+      ].join('\n'),
+    });
+
+    return c.json({ success: true });
+  } catch (error) {
+    console.error('Job application route error:', error);
+    return c.json(
+      {
+        success: false,
+        message: error instanceof Error ? error.message : 'Internal Server Error',
+      },
+      500,
+    );
+  }
+});
+
+app.notFound((c) => c.json({ success: false, message: 'Not Found' }, 404));
 
 app.onError((error, c) => {
   console.error('Worker error:', error);
-  return c.json({ success: false, message: error.message || 'Internal Server Error' }, 500);
+  return c.json(
+    { success: false, message: error.message || 'Internal Server Error' },
+    500,
+  );
 });
 
 export default app;
