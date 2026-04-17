@@ -6,137 +6,160 @@ import { UserPage } from '@/pages/UserPage';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 
-type UserRole = 'admin' | 'user' | null;
-type AuthState = 'loading' | 'logged_out' | 'logged_in';
+type UserRole = 'admin' | 'user';
+type ViewState = 'booting' | 'logged_out' | 'unauthorized' | 'admin' | 'user';
 
 function FullScreenLoading() {
   return <div className="flex min-h-screen items-center justify-center text-white">Loading...</div>;
+}
+
+function isValidRole(role: unknown): role is UserRole {
+  return role === 'admin' || role === 'user';
 }
 
 export default function CMSPage() {
   const language = useLanguage();
   const locale = language?.locale ?? 'vi';
 
-  const [authState, setAuthState] = useState<AuthState>('loading');
-  const [role, setRole] = useState<UserRole>(null);
-  const [roleLoading, setRoleLoading] = useState(false);
-
+  const [viewState, setViewState] = useState<ViewState>('booting');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const mountedRef = useRef(true);
-  const bootstrappedRef = useRef(false);
-  const loadingTimeoutRef = useRef<number | null>(null);
+  const mountedRef = useRef(false);
+  const requestIdRef = useRef(0);
 
-  async function loadRole(userId: string) {
-    if (!supabase) {
-      setRole(null);
-      return;
-    }
+  function safeSetViewState(next: ViewState) {
+    if (!mountedRef.current) return;
+    setViewState(next);
+  }
+
+  async function getRole(userId: string, requestId: number): Promise<UserRole | null | 'stale'> {
+    if (!supabase) return null;
 
     try {
-      setRoleLoading(true);
-
       const { data, error } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', userId)
         .maybeSingle();
 
+      if (!mountedRef.current || requestId !== requestIdRef.current) {
+        return 'stale';
+      }
+
       if (error) {
-        console.error('loadRole error:', error);
-        setRole(null);
-        return;
+        console.error('getRole error:', error);
+        return null;
       }
 
-      if (!data?.role) {
-        setRole(null);
-        return;
+      if (!isValidRole(data?.role)) {
+        return null;
       }
 
-      setRole(data.role as UserRole);
+      return data.role;
     } catch (error) {
-      console.error('loadRole unexpected error:', error);
-      setRole(null);
-    } finally {
-      if (mountedRef.current) {
-        setRoleLoading(false);
+      if (!mountedRef.current || requestId !== requestIdRef.current) {
+        return 'stale';
       }
+
+      console.error('getRole unexpected error:', error);
+      return null;
     }
   }
 
   async function syncSession() {
-    if (!supabase || !mountedRef.current) {
-      setAuthState('logged_out');
+    const requestId = ++requestIdRef.current;
+
+    if (!supabase) {
+      safeSetViewState('logged_out');
       return;
     }
 
     try {
       const { data, error } = await supabase.auth.getSession();
 
+      if (!mountedRef.current || requestId !== requestIdRef.current) return;
+
       if (error) {
         console.error('getSession error:', error);
-        setAuthState('logged_out');
-        setRole(null);
+        safeSetViewState('logged_out');
         return;
       }
 
-      const session = data.session;
+      const user = data.session?.user;
 
-      if (!session?.user) {
-        setAuthState('logged_out');
-        setRole(null);
+      if (!user) {
+        safeSetViewState('logged_out');
         return;
       }
 
-      setAuthState('logged_in');
-      await loadRole(session.user.id);
+      const role = await getRole(user.id, requestId);
+
+      if (!mountedRef.current || requestId !== requestIdRef.current) return;
+      if (role === 'stale') return;
+
+      if (!role) {
+        safeSetViewState('unauthorized');
+        return;
+      }
+
+      safeSetViewState(role);
     } catch (error) {
+      if (!mountedRef.current || requestId !== requestIdRef.current) return;
       console.error('syncSession error:', error);
-      setAuthState('logged_out');
-      setRole(null);
+      safeSetViewState('logged_out');
     }
+  }
+
+  async function applySignedInUser(userId: string) {
+    const requestId = ++requestIdRef.current;
+
+    safeSetViewState('booting');
+
+    const role = await getRole(userId, requestId);
+
+    if (!mountedRef.current || requestId !== requestIdRef.current) return;
+    if (role === 'stale') return;
+
+    if (!role) {
+      safeSetViewState('unauthorized');
+      return;
+    }
+
+    safeSetViewState(role);
   }
 
   useEffect(() => {
     mountedRef.current = true;
 
     if (!supabase) {
-      setAuthState('logged_out');
-      return;
+      safeSetViewState('logged_out');
+      return () => {
+        mountedRef.current = false;
+      };
     }
 
-    if (bootstrappedRef.current) return;
-    bootstrappedRef.current = true;
-
-    loadingTimeoutRef.current = window.setTimeout(() => {
-      if (!mountedRef.current) return;
-      if (authState === 'loading') {
-        setAuthState('logged_out');
-      }
-    }, 2500);
+    const sb = supabase;
 
     void syncSession();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = sb.auth.onAuthStateChange(async (event, session) => {
       if (!mountedRef.current) return;
 
       try {
-        if (!session?.user) {
-          setAuthState('logged_out');
-          setRole(null);
+        if (event === 'SIGNED_OUT' || !session?.user) {
+          safeSetViewState('logged_out');
           return;
         }
 
-        setAuthState('logged_in');
-        await loadRole(session.user.id);
+        await applySignedInUser(session.user.id);
       } catch (error) {
-        console.error('auth state error:', error);
-        setAuthState('logged_out');
-        setRole(null);
+        if (!mountedRef.current) return;
+        console.error('onAuthStateChange error:', error);
+        safeSetViewState('logged_out');
       }
     });
 
@@ -146,24 +169,12 @@ export default function CMSPage() {
       }
     };
 
-    const handleFocus = () => {
-      void syncSession();
-    };
-
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocus);
-    window.addEventListener('pageshow', handleFocus);
 
     return () => {
       mountedRef.current = false;
       subscription.unsubscribe();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
-      window.removeEventListener('pageshow', handleFocus);
-
-      if (loadingTimeoutRef.current) {
-        window.clearTimeout(loadingTimeoutRef.current);
-      }
     };
   }, []);
 
@@ -171,7 +182,7 @@ export default function CMSPage() {
     e.preventDefault();
 
     if (!supabase) {
-      toast.error('Supabase chưa được cấu hình.');
+      toast.error(locale === 'vi' ? 'Supabase chưa được cấu hình.' : 'Supabase is not configured.');
       return;
     }
 
@@ -179,7 +190,7 @@ export default function CMSPage() {
       setBusy(true);
 
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       });
 
@@ -188,23 +199,44 @@ export default function CMSPage() {
         return;
       }
 
-      if (data.user) {
-        setAuthState('logged_in');
-        await loadRole(data.user.id);
+      if (!data.user) {
+        toast.error(
+          locale === 'vi' ? 'Không lấy được thông tin người dùng.' : 'Unable to get user info.',
+        );
+        safeSetViewState('logged_out');
+        return;
       }
+
+      await applySignedInUser(data.user.id);
     } catch (error) {
       console.error('handleLogin error:', error);
-      toast.error('Đăng nhập thất bại.');
+      toast.error(locale === 'vi' ? 'Đăng nhập thất bại.' : 'Login failed.');
     } finally {
-      setBusy(false);
+      if (mountedRef.current) {
+        setBusy(false);
+      }
     }
   }
 
-  if (authState === 'loading') {
+  async function handleSignOut() {
+    try {
+      await supabase?.auth.signOut();
+
+      if (!mountedRef.current) return;
+
+      setPassword('');
+      safeSetViewState('logged_out');
+    } catch (error) {
+      console.error('signOut error:', error);
+      toast.error(locale === 'vi' ? 'Đăng xuất thất bại.' : 'Sign out failed.');
+    }
+  }
+
+  if (viewState === 'booting') {
     return <FullScreenLoading />;
   }
 
-  if (authState === 'logged_out') {
+  if (viewState === 'logged_out') {
     return (
       <div className="flex min-h-screen items-center justify-center px-4">
         <div className="glass w-full max-w-md rounded-[2rem] p-8">
@@ -223,6 +255,8 @@ export default function CMSPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               type="email"
+              autoComplete="email"
+              inputMode="email"
               required
             />
             <input
@@ -231,6 +265,7 @@ export default function CMSPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               type="password"
+              autoComplete="current-password"
               required
             />
             <button className="btn-primary w-full justify-center" disabled={busy}>
@@ -242,22 +277,16 @@ export default function CMSPage() {
     );
   }
 
-  if (roleLoading) {
-    return <FullScreenLoading />;
-  }
-
-  if (role === null) {
+  if (viewState === 'unauthorized') {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 text-white">
-        <div>Không tải được quyền tài khoản.</div>
-        <button
-          className="btn-secondary"
-          onClick={async () => {
-            await supabase?.auth.signOut();
-            location.reload();
-          }}
-        >
-          Quay về đăng nhập
+        <div>
+          {locale === 'vi'
+            ? 'Không tải được quyền tài khoản.'
+            : 'Unable to load account permissions.'}
+        </div>
+        <button className="btn-secondary" onClick={handleSignOut}>
+          {locale === 'vi' ? 'Quay về đăng nhập' : 'Back to login'}
         </button>
       </div>
     );
@@ -265,7 +294,7 @@ export default function CMSPage() {
 
   return (
     <div className="min-h-screen bg-[#080304] text-white">
-      {role === 'admin' ? <AdminPage /> : <UserPage />}
+      {viewState === 'admin' ? <AdminPage /> : <UserPage />}
     </div>
   );
 }
