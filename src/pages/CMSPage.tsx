@@ -9,12 +9,21 @@ import { toast } from 'sonner';
 type UserRole = 'admin' | 'user';
 type ViewState = 'booting' | 'logged_out' | 'unauthorized' | 'admin' | 'user';
 
+const BOOT_TIMEOUT_MS = 7000;
+const PROFILE_TIMEOUT_MS = 5000;
+
 function FullScreenLoading() {
   return <div className="flex min-h-screen items-center justify-center text-white">Loading...</div>;
 }
 
 function isValidRole(role: unknown): role is UserRole {
   return role === 'admin' || role === 'user';
+}
+
+function timeoutAfter<T>(ms: number, fallback: T): Promise<T> {
+  return new Promise((resolve) => {
+    window.setTimeout(() => resolve(fallback), ms);
+  });
 }
 
 export default function CMSPage() {
@@ -28,9 +37,9 @@ export default function CMSPage() {
 
   const mountedRef = useRef(false);
   const requestIdRef = useRef(0);
-  const initializedRef = useRef(false);
   const currentViewRef = useRef<ViewState>('booting');
   const silentSyncInFlightRef = useRef(false);
+  const bootTimerRef = useRef<number | null>(null);
 
   function safeSetViewState(next: ViewState) {
     if (!mountedRef.current) return;
@@ -38,21 +47,34 @@ export default function CMSPage() {
     setViewState(next);
   }
 
+  function clearBootTimer() {
+    if (bootTimerRef.current !== null) {
+      window.clearTimeout(bootTimerRef.current);
+      bootTimerRef.current = null;
+    }
+  }
+
   async function getRole(
     userId: string,
     requestId: number,
     sb: NonNullable<typeof supabase>,
-  ): Promise<UserRole | null | 'stale'> {
+  ): Promise<UserRole | null | 'stale' | 'timeout'> {
     try {
-      const { data, error } = await sb
-        .from('profiles')
-        .select('role')
-        .eq('id', userId)
-        .maybeSingle();
+      const result = await Promise.race([
+        sb.from('profiles').select('role').eq('id', userId).maybeSingle(),
+        timeoutAfter(PROFILE_TIMEOUT_MS, 'timeout' as const),
+      ]);
 
       if (!mountedRef.current || requestId !== requestIdRef.current) {
         return 'stale';
       }
+
+      if (result === 'timeout') {
+        console.error('getRole timeout');
+        return 'timeout';
+      }
+
+      const { data, error } = result;
 
       if (error) {
         console.error('getRole error:', error);
@@ -74,7 +96,7 @@ export default function CMSPage() {
     }
   }
 
-  async function syncSession(options?: { silent?: boolean }) {
+  async function resolveAuth(options?: { silent?: boolean }) {
     const silent = options?.silent ?? false;
     const requestId = ++requestIdRef.current;
 
@@ -86,33 +108,52 @@ export default function CMSPage() {
     const sb = supabase;
 
     try {
-      const { data, error } = await sb.auth.getSession();
+      const { data: sessionData, error: sessionError } = await sb.auth.getSession();
 
       if (!mountedRef.current || requestId !== requestIdRef.current) return;
 
-      if (error) {
-        console.error('getSession error:', error);
+      if (sessionError) {
+        console.error('getSession error:', sessionError);
 
-        if (!silent || currentViewRef.current === 'booting') {
-          safeSetViewState('logged_out');
-        }
-
-        return;
-      }
-
-      const user = data.session?.user;
-
-      if (!user) {
         if (!silent || currentViewRef.current === 'booting') {
           safeSetViewState('logged_out');
         }
         return;
       }
 
-      const role = await getRole(user.id, requestId, sb);
+      const sessionUser = sessionData.session?.user;
+
+      if (!sessionUser) {
+        if (!silent || currentViewRef.current === 'booting') {
+          safeSetViewState('logged_out');
+        }
+        return;
+      }
+
+      const { data: userData, error: userError } = await sb.auth.getUser();
+
+      if (!mountedRef.current || requestId !== requestIdRef.current) return;
+
+      if (userError || !userData.user) {
+        console.error('getUser error:', userError);
+
+        if (!silent || currentViewRef.current === 'booting') {
+          safeSetViewState('logged_out');
+        }
+        return;
+      }
+
+      const role = await getRole(userData.user.id, requestId, sb);
 
       if (!mountedRef.current || requestId !== requestIdRef.current) return;
       if (role === 'stale') return;
+
+      if (role === 'timeout') {
+        if (!silent || currentViewRef.current === 'booting') {
+          safeSetViewState('logged_out');
+        }
+        return;
+      }
 
       if (!role) {
         if (!silent || currentViewRef.current === 'booting') {
@@ -125,7 +166,7 @@ export default function CMSPage() {
     } catch (error) {
       if (!mountedRef.current || requestId !== requestIdRef.current) return;
 
-      console.error('syncSession error:', error);
+      console.error('resolveAuth error:', error);
 
       if (!silent || currentViewRef.current === 'booting') {
         safeSetViewState('logged_out');
@@ -142,43 +183,52 @@ export default function CMSPage() {
     }
 
     const sb = supabase;
+    const role = await getRole(userId, requestId, sb);
 
-    try {
-      const role = await getRole(userId, requestId, sb);
+    if (!mountedRef.current || requestId !== requestIdRef.current) return;
+    if (role === 'stale') return;
 
-      if (!mountedRef.current || requestId !== requestIdRef.current) return;
-      if (role === 'stale') return;
-
-      if (!role) {
-        safeSetViewState('unauthorized');
-        return;
-      }
-
-      safeSetViewState(role);
-    } catch (error) {
-      if (!mountedRef.current || requestId !== requestIdRef.current) return;
-      console.error('applySignedInUser error:', error);
+    if (role === 'timeout') {
+      toast.error(
+        locale === 'vi'
+          ? 'Tải quyền tài khoản quá lâu. Vui lòng thử lại.'
+          : 'Loading account role took too long. Please try again.',
+      );
       safeSetViewState('logged_out');
+      return;
     }
+
+    if (!role) {
+      safeSetViewState('unauthorized');
+      return;
+    }
+
+    safeSetViewState(role);
   }
 
   useEffect(() => {
     mountedRef.current = true;
+
+    bootTimerRef.current = window.setTimeout(() => {
+      if (!mountedRef.current) return;
+      if (currentViewRef.current === 'booting') {
+        console.warn('Boot timeout -> logged_out');
+        safeSetViewState('logged_out');
+      }
+    }, BOOT_TIMEOUT_MS);
 
     if (!supabase) {
       safeSetViewState('logged_out');
 
       return () => {
         mountedRef.current = false;
+        clearBootTimer();
       };
     }
 
     const sb = supabase;
 
-    if (!initializedRef.current) {
-      initializedRef.current = true;
-      void syncSession({ silent: false });
-    }
+    void resolveAuth({ silent: false });
 
     const {
       data: { subscription },
@@ -202,12 +252,13 @@ export default function CMSPage() {
     const handleVisibilityChange = () => {
       if (document.visibilityState !== 'visible') return;
       if (silentSyncInFlightRef.current) return;
+      if (currentViewRef.current === 'booting') return;
 
       silentSyncInFlightRef.current = true;
 
       void (async () => {
         try {
-          await syncSession({ silent: true });
+          await resolveAuth({ silent: true });
         } finally {
           silentSyncInFlightRef.current = false;
         }
@@ -220,8 +271,15 @@ export default function CMSPage() {
       mountedRef.current = false;
       subscription.unsubscribe();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      clearBootTimer();
     };
   }, []);
+
+  useEffect(() => {
+    if (viewState !== 'booting') {
+      clearBootTimer();
+    }
+  }, [viewState]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
