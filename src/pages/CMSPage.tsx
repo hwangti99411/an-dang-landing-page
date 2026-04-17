@@ -5,7 +5,7 @@ import { AdminPage } from '@/pages/AdminPage';
 import { UserPage } from '@/pages/UserPage';
 import { useLanguage } from '@/contexts/LanguageContext';
 
-type UserRole = 'admin' | 'user' | null;
+type AccessState = 'loading' | 'admin' | 'user' | 'no_profile' | 'forbidden' | 'error';
 
 function FullScreenLoading() {
   return <div className="flex min-h-screen items-center justify-center text-white">Loading...</div>;
@@ -17,7 +17,7 @@ export default function CMSPage() {
 
   const [sessionReady, setSessionReady] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
-  const [role, setRole] = useState<UserRole>(null);
+  const [access, setAccess] = useState<AccessState>('loading');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -27,26 +27,38 @@ export default function CMSPage() {
 
   async function loadRole(userId: string) {
     if (!supabase) {
-      setRole(null);
+      setAccess('error');
       return;
     }
 
-    const sb = supabase!;
-
-    const { data, error } = await sb.from('profiles').select('role').eq('id', userId).maybeSingle();
+    const { data, error, status } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .maybeSingle();
 
     if (error) {
-      console.error('loadRole error:', error);
-      setRole(null);
+      console.error('loadRole error:', error, status);
+      setAccess('error');
       return;
     }
 
-    if (!data?.role) {
-      setRole(null);
+    if (!data) {
+      setAccess('no_profile');
       return;
     }
 
-    setRole(data.role as UserRole);
+    if (data.role === 'admin') {
+      setAccess('admin');
+      return;
+    }
+
+    if (data.role === 'user') {
+      setAccess('user');
+      return;
+    }
+
+    setAccess('forbidden');
   }
 
   useEffect(() => {
@@ -54,29 +66,31 @@ export default function CMSPage() {
 
     if (!supabase) {
       setSessionReady(true);
+      setAccess('error');
       return;
     }
 
     if (bootstrappedRef.current) return;
     bootstrappedRef.current = true;
 
-    const sb = supabase!;
-
     const safetyTimer = window.setTimeout(() => {
-      if (mountedRef.current) {
-        setSessionReady(true);
-      }
+      if (mountedRef.current) setSessionReady(true);
     }, 3000);
 
     async function init() {
+      if (!supabase) {
+        setAccess('error');
+        return;
+      }
+
       try {
-        const { data, error } = await sb.auth.getSession();
+        const { data, error } = await supabase.auth.getSession();
 
         if (error) {
           console.error('init auth error:', error);
           if (!mountedRef.current) return;
           setLoggedIn(false);
-          setRole(null);
+          setAccess('loading');
           return;
         }
 
@@ -86,21 +100,20 @@ export default function CMSPage() {
 
         if (!session?.user) {
           setLoggedIn(false);
-          setRole(null);
+          setAccess('loading');
           return;
         }
 
         setLoggedIn(true);
+        setAccess('loading');
         await loadRole(session.user.id);
       } catch (error) {
         console.error('init error:', error);
         if (!mountedRef.current) return;
         setLoggedIn(false);
-        setRole(null);
+        setAccess('error');
       } finally {
-        if (mountedRef.current) {
-          setSessionReady(true);
-        }
+        if (mountedRef.current) setSessionReady(true);
       }
     }
 
@@ -108,28 +121,27 @@ export default function CMSPage() {
 
     const {
       data: { subscription },
-    } = sb.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!mountedRef.current) return;
 
       try {
         if (!session?.user) {
           setLoggedIn(false);
-          setRole(null);
+          setAccess('loading');
           setSessionReady(true);
           return;
         }
 
         setLoggedIn(true);
+        setAccess('loading');
         await loadRole(session.user.id);
       } catch (error) {
         console.error('auth state error:', error);
         if (!mountedRef.current) return;
         setLoggedIn(false);
-        setRole(null);
+        setAccess('error');
       } finally {
-        if (mountedRef.current) {
-          setSessionReady(true);
-        }
+        if (mountedRef.current) setSessionReady(true);
       }
     });
 
@@ -148,13 +160,12 @@ export default function CMSPage() {
       return;
     }
 
-    const sb = supabase!;
-
     try {
       setBusy(true);
       setSessionReady(false);
+      setAccess('loading');
 
-      const { data, error } = await sb.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -171,6 +182,7 @@ export default function CMSPage() {
     } catch (error) {
       console.error('handleLogin error:', error);
       alert('Đăng nhập thất bại.');
+      setAccess('error');
     } finally {
       setBusy(false);
       setSessionReady(true);
@@ -219,18 +231,18 @@ export default function CMSPage() {
     );
   }
 
-  if (loggedIn && role === null) {
+  if (access === 'loading') {
+    return <FullScreenLoading />;
+  }
+
+  if (access === 'no_profile') {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 text-white">
-        <div>Không tải được quyền tài khoản.</div>
+        <div>Tài khoản chưa được cấp hồ sơ quyền.</div>
         <button
           className="btn-secondary"
           onClick={async () => {
-            if (!supabase) {
-              location.reload();
-              return;
-            }
-            await supabase.auth.signOut();
+            await supabase?.auth.signOut();
             location.reload();
           }}
         >
@@ -240,9 +252,37 @@ export default function CMSPage() {
     );
   }
 
+  if (access === 'forbidden') {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 text-white">
+        <div>Bạn không có quyền truy cập trang này.</div>
+        <button
+          className="btn-secondary"
+          onClick={async () => {
+            await supabase?.auth.signOut();
+            location.reload();
+          }}
+        >
+          Quay về đăng nhập
+        </button>
+      </div>
+    );
+  }
+
+  if (access === 'error') {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 text-white">
+        <div>Không thể tải quyền tài khoản. Vui lòng thử lại.</div>
+        <button className="btn-secondary" onClick={() => location.reload()}>
+          Tải lại
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#080304] text-white">
-      {role === 'admin' ? <AdminPage /> : <UserPage />}
+      {access === 'admin' ? <AdminPage /> : <UserPage />}
     </div>
   );
 }
