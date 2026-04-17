@@ -31,7 +31,7 @@ function TruthOrDareGame({ cards }: { cards: TruthOrDareCard[] }) {
   return (
     <div className="glass rounded-[2rem] p-4 sm:p-6 text-white">
       <div className="mb-5 flex items-center gap-3">
-        <button className="btn-primary" onClick={handleDraw} disabled={!cards.length}>
+        <button className="btn-primary w-full" onClick={handleDraw} disabled={!cards.length}>
           Rút bài
         </button>
         {!cards.length && (
