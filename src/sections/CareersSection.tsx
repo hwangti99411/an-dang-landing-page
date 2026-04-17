@@ -431,7 +431,7 @@ export function CareersSection({ jobs }: { jobs: JobItem[] }) {
           )}
         </div>
 
-        {!isLoading && jobs.length > 4 && (
+        {!isLoading && !!jobs.length && (
           <div className="mt-10 text-center">
             <Link
               to="/careers/details"
