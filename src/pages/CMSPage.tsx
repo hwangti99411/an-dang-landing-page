@@ -9,8 +9,9 @@ import { toast } from 'sonner';
 type UserRole = 'admin' | 'user';
 type ViewState = 'booting' | 'logged_out' | 'unauthorized' | 'admin' | 'user';
 
-const BOOT_TIMEOUT_MS = 7000;
-const PROFILE_TIMEOUT_MS = 5000;
+const BOOT_TIMEOUT_MS = 12000;
+const PROFILE_TIMEOUT_MS = 10000;
+const PROFILE_RETRY_COUNT = 1;
 
 function FullScreenLoading() {
   return <div className="flex min-h-screen items-center justify-center text-white">Loading...</div>;
@@ -26,6 +27,19 @@ function timeoutAfter<T>(ms: number, fallback: T): Promise<T> {
   });
 }
 
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
+
+type RoleResult =
+  | { status: 'success'; role: UserRole }
+  | { status: 'unauthorized' }
+  | { status: 'timeout' }
+  | { status: 'error' }
+  | { status: 'stale' };
+
 export default function CMSPage() {
   const language = useLanguage();
   const locale = language?.locale ?? 'vi';
@@ -40,11 +54,20 @@ export default function CMSPage() {
   const currentViewRef = useRef<ViewState>('booting');
   const silentSyncInFlightRef = useRef(false);
   const bootTimerRef = useRef<number | null>(null);
+  const lastRoleRef = useRef<UserRole | null>(null);
 
   function safeSetViewState(next: ViewState) {
     if (!mountedRef.current) return;
     currentViewRef.current = next;
     setViewState(next);
+
+    if (next === 'admin' || next === 'user') {
+      lastRoleRef.current = next;
+    }
+
+    if (next === 'logged_out') {
+      lastRoleRef.current = null;
+    }
   }
 
   function clearBootTimer() {
@@ -54,11 +77,19 @@ export default function CMSPage() {
     }
   }
 
-  async function getRole(
+  function showRoleLoadErrorToast() {
+    toast.error(
+      locale === 'vi'
+        ? 'Không tải được quyền tài khoản. Vui lòng thử lại.'
+        : 'Unable to load account permissions. Please try again.',
+    );
+  }
+
+  async function fetchRoleOnce(
     userId: string,
     requestId: number,
     sb: NonNullable<typeof supabase>,
-  ): Promise<UserRole | null | 'stale' | 'timeout'> {
+  ): Promise<RoleResult> {
     try {
       const result = await Promise.race([
         sb.from('profiles').select('role').eq('id', userId).maybeSingle(),
@@ -66,34 +97,60 @@ export default function CMSPage() {
       ]);
 
       if (!mountedRef.current || requestId !== requestIdRef.current) {
-        return 'stale';
+        return { status: 'stale' };
       }
 
       if (result === 'timeout') {
-        console.error('getRole timeout');
-        return 'timeout';
+        console.error('fetchRoleOnce timeout');
+        return { status: 'timeout' };
       }
 
       const { data, error } = result;
 
       if (error) {
-        console.error('getRole error:', error);
-        return null;
+        console.error('fetchRoleOnce error:', error);
+        return { status: 'error' };
       }
 
-      if (!isValidRole(data?.role)) {
-        return null;
+      if (!data || !isValidRole(data.role)) {
+        return { status: 'unauthorized' };
       }
 
-      return data.role;
+      return { status: 'success', role: data.role };
     } catch (error) {
       if (!mountedRef.current || requestId !== requestIdRef.current) {
-        return 'stale';
+        return { status: 'stale' };
       }
 
-      console.error('getRole unexpected error:', error);
-      return null;
+      console.error('fetchRoleOnce unexpected error:', error);
+      return { status: 'error' };
     }
+  }
+
+  async function getRoleWithRetry(
+    userId: string,
+    requestId: number,
+    sb: NonNullable<typeof supabase>,
+  ): Promise<RoleResult> {
+    let lastResult: RoleResult = { status: 'error' };
+
+    for (let attempt = 0; attempt <= PROFILE_RETRY_COUNT; attempt += 1) {
+      lastResult = await fetchRoleOnce(userId, requestId, sb);
+
+      if (
+        lastResult.status === 'success' ||
+        lastResult.status === 'unauthorized' ||
+        lastResult.status === 'stale'
+      ) {
+        return lastResult;
+      }
+
+      if (attempt < PROFILE_RETRY_COUNT) {
+        await wait(400);
+      }
+    }
+
+    return lastResult;
   }
 
   async function resolveAuth(options?: { silent?: boolean }) {
@@ -115,61 +172,60 @@ export default function CMSPage() {
       if (sessionError) {
         console.error('getSession error:', sessionError);
 
-        if (!silent || currentViewRef.current === 'booting') {
+        // Không logout khi silent sync bị lỗi tạm thời
+        if (!silent && currentViewRef.current === 'booting') {
           safeSetViewState('logged_out');
         }
+
         return;
       }
 
       const sessionUser = sessionData.session?.user;
 
+      // Chỉ khi thực sự không có session mới về logged_out
       if (!sessionUser) {
-        if (!silent || currentViewRef.current === 'booting') {
-          safeSetViewState('logged_out');
-        }
+        safeSetViewState('logged_out');
         return;
       }
 
-      const { data: userData, error: userError } = await sb.auth.getUser();
+      const roleResult = await getRoleWithRetry(sessionUser.id, requestId, sb);
 
       if (!mountedRef.current || requestId !== requestIdRef.current) return;
+      if (roleResult.status === 'stale') return;
 
-      if (userError || !userData.user) {
-        console.error('getUser error:', userError);
+      if (roleResult.status === 'success') {
+        safeSetViewState(roleResult.role);
+        return;
+      }
 
-        if (!silent || currentViewRef.current === 'booting') {
+      if (roleResult.status === 'unauthorized') {
+        safeSetViewState('unauthorized');
+        return;
+      }
+
+      // Có session nhưng load role lỗi/timeout => giữ nguyên màn hình hiện tại
+      console.error('resolveAuth role load failed:', roleResult.status);
+
+      if (currentViewRef.current === 'booting') {
+        // Nếu đang boot lần đầu mà vẫn lỗi, ưu tiên giữ người dùng ở trạng thái an toàn
+        // Nếu đã từng biết role trước đó thì dùng lại role cũ
+        if (lastRoleRef.current) {
+          safeSetViewState(lastRoleRef.current);
+        } else {
           safeSetViewState('logged_out');
         }
-        return;
+      } else if (!silent) {
+        showRoleLoadErrorToast();
       }
-
-      const role = await getRole(userData.user.id, requestId, sb);
-
-      if (!mountedRef.current || requestId !== requestIdRef.current) return;
-      if (role === 'stale') return;
-
-      if (role === 'timeout') {
-        if (!silent || currentViewRef.current === 'booting') {
-          safeSetViewState('logged_out');
-        }
-        return;
-      }
-
-      if (!role) {
-        if (!silent || currentViewRef.current === 'booting') {
-          safeSetViewState('unauthorized');
-        }
-        return;
-      }
-
-      safeSetViewState(role);
     } catch (error) {
       if (!mountedRef.current || requestId !== requestIdRef.current) return;
 
       console.error('resolveAuth error:', error);
 
-      if (!silent || currentViewRef.current === 'booting') {
+      if (currentViewRef.current === 'booting') {
         safeSetViewState('logged_out');
+      } else if (!silent) {
+        showRoleLoadErrorToast();
       }
     }
   }
@@ -183,27 +239,30 @@ export default function CMSPage() {
     }
 
     const sb = supabase;
-    const role = await getRole(userId, requestId, sb);
+    const roleResult = await getRoleWithRetry(userId, requestId, sb);
 
     if (!mountedRef.current || requestId !== requestIdRef.current) return;
-    if (role === 'stale') return;
+    if (roleResult.status === 'stale') return;
 
-    if (role === 'timeout') {
-      toast.error(
-        locale === 'vi'
-          ? 'Tải quyền tài khoản quá lâu. Vui lòng thử lại.'
-          : 'Loading account role took too long. Please try again.',
-      );
-      safeSetViewState('logged_out');
+    if (roleResult.status === 'success') {
+      safeSetViewState(roleResult.role);
       return;
     }
 
-    if (!role) {
+    if (roleResult.status === 'unauthorized') {
       safeSetViewState('unauthorized');
       return;
     }
 
-    safeSetViewState(role);
+    // Không đá ra login khi chỉ lỗi load role
+    console.error('applySignedInUser role load failed:', roleResult.status);
+    showRoleLoadErrorToast();
+
+    // Sau login mà lỗi role tạm thời, giữ nguyên giao diện hiện tại nếu có
+    // Nếu chưa có giao diện nào ổn định thì quay về logged_out để user tự thử lại
+    if (currentViewRef.current === 'booting') {
+      safeSetViewState('logged_out');
+    }
   }
 
   useEffect(() => {
@@ -232,20 +291,24 @@ export default function CMSPage() {
 
     const {
       data: { subscription },
-    } = sb.auth.onAuthStateChange(async (event, session) => {
+    } = sb.auth.onAuthStateChange((event, session) => {
       if (!mountedRef.current) return;
 
       try {
-        if (event === 'SIGNED_OUT' || !session?.user) {
+        if (event === 'SIGNED_OUT') {
+          setPassword('');
           safeSetViewState('logged_out');
           return;
         }
 
-        await applySignedInUser(session.user.id);
+        // Các event như SIGNED_IN, TOKEN_REFRESHED, USER_UPDATED
+        // nếu còn session thì chỉ đồng bộ lại role
+        if (session?.user) {
+          void applySignedInUser(session.user.id);
+        }
       } catch (error) {
         if (!mountedRef.current) return;
         console.error('onAuthStateChange error:', error);
-        safeSetViewState('logged_out');
       }
     });
 
@@ -385,8 +448,8 @@ export default function CMSPage() {
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 text-white">
         <div>
           {locale === 'vi'
-            ? 'Không tải được quyền tài khoản.'
-            : 'Unable to load account permissions.'}
+            ? 'Tài khoản không có quyền truy cập CMS.'
+            : 'This account is not authorized to access CMS.'}
         </div>
         <button className="btn-secondary" onClick={handleSignOut}>
           {locale === 'vi' ? 'Quay về đăng nhập' : 'Back to login'}
