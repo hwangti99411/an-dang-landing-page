@@ -3,11 +3,13 @@ import { motion } from 'framer-motion';
 export function SectionHeading({
   eyebrow,
   title,
+  subtitle,
   description,
   align = 'left',
 }: {
   eyebrow: string;
   title: string;
+  subtitle?: string;
   description: string;
   align?: 'left' | 'center';
 }) {
@@ -22,7 +24,12 @@ export function SectionHeading({
       <span className="inline-flex rounded-full border border-brand-gold/25 bg-brand-gold/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-brand-gold">
         {eyebrow}
       </span>
+
       <h2 className="section-title mt-5">{title}</h2>
+
+      {/* Subtitle nhỏ */}
+      {subtitle && <p className="mt-2 text-sm font-medium text-gray-400">{subtitle}</p>}
+
       <p className="section-subtitle mt-4">{description}</p>
     </motion.div>
   );

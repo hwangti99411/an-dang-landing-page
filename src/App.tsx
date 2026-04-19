@@ -17,8 +17,8 @@ export default function App() {
         <Route path="/news" element={<HomePage />} />
         <Route path="/careers" element={<HomePage />} />
         <Route path="/contact" element={<HomePage />} />
-        <Route path="/careers/details" element={<CareersDetailPage />} />
-        <Route path="/careers/details/:id" element={<CareersDetailPage />} />
+        <Route path="/careers/list" element={<CareersDetailPage />} />
+        <Route path="/careers/list/:id" element={<CareersDetailPage />} />
         <Route path="/news/:slug" element={<NewsDetailPage />} />
         <Route path="/admin" element={<CMSPage />} />
       </Routes>

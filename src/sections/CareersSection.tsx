@@ -297,6 +297,11 @@ export function CareersSection({ jobs }: { jobs: JobItem[] }) {
               ? 'Gia nhập đội ngũ công nghệ đang tăng tốc.'
               : 'Join a technology team that moves with ambition.'
           }
+          subtitle={
+            locale === 'vi'
+              ? 'Tăng cơ hội hợp tác với các doanh nghiệp lớn.'
+              : 'Increase opportunities for collaboration with large businesses.'
+          }
           description=""
         />
 
@@ -444,7 +449,7 @@ export function CareersSection({ jobs }: { jobs: JobItem[] }) {
         {!isLoading && !!jobs.length && (
           <div className="mt-10 text-center">
             <Link
-              to="/careers/details"
+              to="/careers/list"
               state={{ scrollTo: null }}
               className="inline-flex rounded-full bg-[#f2b544] px-6 py-3 font-semibold text-black transition hover:opacity-90"
             >
