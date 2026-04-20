@@ -558,12 +558,12 @@ export function CareersDetailPage() {
                       className="group flex min-h-[360px] flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-5 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-brand-gold/30 hover:shadow-[0_12px_40px_rgba(242,181,68,0.12)] md:p-6"
                     >
                       <Link to={`/careers/list/${job.id}`} className="block min-h-0 flex-1">
-                        <div className="flex flex-col gap-3 md:gap-4 xl:flex-row xl:items-start xl:justify-between">
-                          <h3 className="text-[18px] font-semibold leading-[1.35] text-white md:text-[22px] xl:text-xl">
+                        <div className="flex items-start justify-between gap-4">
+                          <h3 className="text-xl font-semibold leading-snug text-white">
                             {locale === 'vi' ? job.title_vi : job.title_en}
                           </h3>
 
-                          <span className="w-fit shrink-0 rounded-full border border-brand-gold/20 bg-brand-gold/10 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-brand-gold md:text-xs">
+                          <span className="shrink-0 rounded-full border border-brand-gold/20 bg-brand-gold/10 px-3 py-1 text-xs uppercase tracking-[0.2em] text-brand-gold">
                             {locale === 'vi' ? job.type_vi : job.type_en}
                           </span>
                         </div>
