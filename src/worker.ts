@@ -360,16 +360,18 @@ app.post('/api/job-application', async (c) => {
     await saveToSupabase(c.env, 'job_applications', payload);
 
     try {
+      const formattedExpectedSalary = String(body.expected_salary || '').replace(/\D/g, '')
+        ? Number(String(body.expected_salary).replace(/\D/g, '')).toLocaleString('en-US')
+        : '';
       await sendTelegramDocument(c.env, {
         file: cvFile,
         caption: [
           '📥 ỨNG TUYỂN MỚI',
           `Vị trí ứng tuyển: ${body.job_title}`,
-          `Job ID: ${body.job_id || ''}`,
           `Tên ứng viên: ${body.full_name}`,
           `Số điện thoại: ${body.phone}`,
           `Email: ${body.email}`,
-          `Mức lương mong muốn: ${body.expected_salary}`,
+          `Mức lương mong muốn: ${formattedExpectedSalary ?? ''}`,
           body.referral_source ? `Nguồn: ${body.referral_source}` : '',
         ]
           .filter(Boolean)
