@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { BriefcaseBusiness, ExternalLink, MapPin, Search, SearchX, X } from 'lucide-react';
+import { ExternalLink, MapPin, Search, SearchX, X } from 'lucide-react';
 import { SectionHeading } from '@/components/SectionHeading';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { usePublicContent } from '@/hooks/usePublicContent';
@@ -13,6 +13,7 @@ import toast from 'react-hot-toast';
 type ApplicationFormState = {
   fullName: string;
   phone: string;
+  email: string;
   expectedSalary: string;
   expectedSalaryRaw: string;
   referralSource: string;
@@ -22,6 +23,7 @@ type ApplicationFormState = {
 const initialFormState: ApplicationFormState = {
   fullName: '',
   phone: '',
+  email: '',
   expectedSalary: '',
   expectedSalaryRaw: '',
   referralSource: '',
@@ -57,7 +59,7 @@ export function CareersDetailPage() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 1200);
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, [jobs]);
@@ -192,6 +194,14 @@ export function CareersDetailPage() {
     };
   };
 
+  const isValidEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const isValidPhone = (phone: string) => {
+    return /^[0-9+\s().-]{8,20}$/.test(phone);
+  };
+
   const openApplyModal = (job: (typeof jobs)[number]) => {
     setSelectedJob(job);
     setFormData(initialFormState);
@@ -286,8 +296,23 @@ export function CareersDetailPage() {
 
     if (!formData.phone.trim()) {
       toast.error(
-        locale === 'vi' ? 'Vui lòng nhập số liên lạc.' : 'Please enter your phone number.',
+        locale === 'vi' ? 'Vui lòng nhập số điện thoại.' : 'Please enter your phone number.',
       );
+      return;
+    }
+
+    if (!isValidPhone(formData.phone.trim())) {
+      toast.error(locale === 'vi' ? 'Số điện thoại không hợp lệ.' : 'Invalid phone number.');
+      return;
+    }
+
+    if (!formData.email.trim()) {
+      toast.error(locale === 'vi' ? 'Vui lòng nhập email.' : 'Please enter your email.');
+      return;
+    }
+
+    if (!isValidEmail(formData.email.trim())) {
+      toast.error(locale === 'vi' ? 'Email không hợp lệ.' : 'Invalid email address.');
       return;
     }
 
@@ -326,13 +351,14 @@ export function CareersDetailPage() {
       setIsSubmitting(true);
 
       const payload = new FormData();
-      payload.append('full_name', formData.fullName);
-      payload.append('phone', formData.phone);
+      payload.append('full_name', formData.fullName.trim());
+      payload.append('phone', formData.phone.trim());
+      payload.append('email', formData.email.trim());
       payload.append('expected_salary', formData.expectedSalaryRaw);
       payload.append('job_id', String(selectedJob.id));
       payload.append('job_title', locale === 'vi' ? selectedJob.title_vi : selectedJob.title_en);
       payload.append('locale', locale);
-      payload.append('referral_source', formData.referralSource || '');
+      payload.append('referral_source', formData.referralSource.trim());
       payload.append('cv_file', formData.cvFile);
 
       const response = await fetch(`${API_BASE_URL}/api/job-application`, {
@@ -589,10 +615,6 @@ export function CareersDetailPage() {
                             <MapPin size={16} />
                             {locale === 'vi' ? job.location_vi : job.location_en}
                           </span>
-                          {/* <span className="inline-flex items-center gap-2">
-                            <BriefcaseBusiness size={16} />
-                            {locale === 'vi' ? job.type_vi : job.type_en}
-                          </span> */}
                         </div>
 
                         <div className="mt-4 overflow-hidden">
@@ -764,17 +786,30 @@ export function CareersDetailPage() {
 
               <div>
                 <label className="mb-2 block text-sm text-white/80">
-                  {locale === 'vi' ? 'Thông tin liên hệ' : 'Contact information'}{' '}
+                  {locale === 'vi' ? 'Số điện thoại' : 'Phone number'}{' '}
                   <span className="text-red-400">*</span>
                 </label>
                 <input
+                  type="tel"
                   name="phone"
                   value={formData.phone}
                   onChange={handleInputChange}
                   className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-white/35 focus:border-brand-gold"
-                  placeholder={
-                    locale === 'vi' ? 'Nhập số điện thoại/email' : 'Enter your phone number/email'
-                  }
+                  placeholder={locale === 'vi' ? 'Nhập số điện thoại' : 'Enter your phone number'}
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm text-white/80">
+                  Email <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-white/35 focus:border-brand-gold"
+                  placeholder={locale === 'vi' ? 'Nhập email' : 'Enter your email'}
                 />
               </div>
 

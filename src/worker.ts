@@ -37,6 +37,7 @@ type BookingPayload = {
 type JobApplicationPayload = {
   full_name?: string;
   phone?: string;
+  email?: string;
   expected_salary?: string;
   job_id?: string;
   job_title?: string;
@@ -170,6 +171,10 @@ async function sendTelegramDocument(
   }
 }
 
+const isValidEmail = (email: string) => {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+};
+
 app.get('/api/health', (c) => {
   return c.json({
     ok: true,
@@ -276,24 +281,24 @@ app.post('/api/job-application', async (c) => {
     const formData = await c.req.formData();
 
     const body: JobApplicationPayload = {
-      full_name: String(formData.get('full_name') ?? ''),
-      phone: String(formData.get('phone') ?? ''),
-      expected_salary: String(formData.get('expected_salary') ?? ''),
-      job_id: String(formData.get('job_id') ?? ''),
-      job_title: String(formData.get('job_title') ?? ''),
-      locale: String(formData.get('locale') ?? 'vi'),
-      referral_source: String(formData.get('referral_source') ?? ''),
+      full_name: String(formData.get('full_name') ?? '').trim(),
+      phone: String(formData.get('phone') ?? '').trim(),
+      email: String(formData.get('email') ?? '').trim(),
+      expected_salary: String(formData.get('expected_salary') ?? '').trim(),
+      job_id: String(formData.get('job_id') ?? '').trim(),
+      job_title: String(formData.get('job_title') ?? '').trim(),
+      locale: String(formData.get('locale') ?? 'vi').trim(),
+      referral_source: String(formData.get('referral_source') ?? '').trim(),
     };
 
     const cvFile = formData.get('cv_file');
 
-    if (
-      !body.full_name?.trim() ||
-      !body.phone?.trim() ||
-      !body.expected_salary?.trim() ||
-      !body.job_title?.trim()
-    ) {
+    if (!body.full_name || !body.phone || !body.email || !body.expected_salary || !body.job_title) {
       return c.json({ success: false, message: 'Vui lòng nhập đầy đủ thông tin bắt buộc.' }, 400);
+    }
+
+    if (!isValidEmail(body.email)) {
+      return c.json({ success: false, message: 'Email không hợp lệ.' }, 400);
     }
 
     if (!(cvFile instanceof File)) {
@@ -340,6 +345,7 @@ app.post('/api/job-application', async (c) => {
     const payload = {
       full_name: body.full_name,
       phone: body.phone,
+      email: body.email,
       expected_salary: body.expected_salary,
       job_id: body.job_id,
       job_title: body.job_title,
@@ -361,7 +367,8 @@ app.post('/api/job-application', async (c) => {
           `Vị trí ứng tuyển: ${body.job_title}`,
           `Job ID: ${body.job_id || ''}`,
           `Tên ứng viên: ${body.full_name}`,
-          `Số liên lạc: ${body.phone}`,
+          `Số điện thoại: ${body.phone}`,
+          `Email: ${body.email}`,
           `Mức lương mong muốn: ${body.expected_salary}`,
           body.referral_source ? `Nguồn: ${body.referral_source}` : '',
         ]
@@ -370,7 +377,6 @@ app.post('/api/job-application', async (c) => {
       });
     } catch (error) {
       console.error('Telegram document error:', error);
-      // Không trả lỗi kỹ thuật về cho người dùng
     }
 
     return c.json({ success: true });
