@@ -293,11 +293,21 @@ app.post('/api/job-application', async (c) => {
       !body.expected_salary?.trim() ||
       !body.job_title?.trim()
     ) {
-      return c.json({ success: false, message: 'Thiếu thông tin bắt buộc' }, 400);
+      return c.json({ success: false, message: 'Vui lòng nhập đầy đủ thông tin bắt buộc.' }, 400);
     }
 
     if (!(cvFile instanceof File)) {
-      return c.json({ success: false, message: 'Vui lòng tải lên file CV' }, 400);
+      return c.json({ success: false, message: 'Vui lòng tải lên file CV.' }, 400);
+    }
+
+    if (cvFile.size === 0) {
+      return c.json(
+        {
+          success: false,
+          message: 'File CV không hợp lệ. Vui lòng chọn lại file có nội dung.',
+        },
+        400,
+      );
     }
 
     const allowedTypes = [
@@ -310,7 +320,7 @@ app.post('/api/job-application', async (c) => {
       return c.json(
         {
           success: false,
-          message: `Chỉ chấp nhận file PDF, DOC, DOCX. File hiện tại: ${cvFile.type || 'unknown'}`,
+          message: 'Chỉ hỗ trợ file PDF, DOC hoặc DOCX.',
         },
         400,
       );
@@ -318,7 +328,13 @@ app.post('/api/job-application', async (c) => {
 
     const maxSize = 5 * 1024 * 1024;
     if (cvFile.size > maxSize) {
-      return c.json({ success: false, message: 'File CV vượt quá 5MB' }, 400);
+      return c.json(
+        {
+          success: false,
+          message: 'File CV không được vượt quá 5MB.',
+        },
+        400,
+      );
     }
 
     const payload = {
@@ -337,26 +353,34 @@ app.post('/api/job-application', async (c) => {
 
     await saveToSupabase(c.env, 'job_applications', payload);
 
-    await sendTelegramDocument(c.env, {
-      file: cvFile,
-      caption: [
-        '📥 ỨNG TUYỂN MỚI',
-        `Vị trí ứng tuyển: ${body.job_title}`,
-        `Job ID: ${body.job_id || ''}`,
-        `Tên ứng viên: ${body.full_name}`,
-        `Số liên lạc: ${body.phone}`,
-        `Mức lương mong muốn: ${body.expected_salary}`,
-        body.referral_source ? `Nguồn: ${body.referral_source}` : '',
-      ].join('\n'),
-    });
+    try {
+      await sendTelegramDocument(c.env, {
+        file: cvFile,
+        caption: [
+          '📥 ỨNG TUYỂN MỚI',
+          `Vị trí ứng tuyển: ${body.job_title}`,
+          `Job ID: ${body.job_id || ''}`,
+          `Tên ứng viên: ${body.full_name}`,
+          `Số liên lạc: ${body.phone}`,
+          `Mức lương mong muốn: ${body.expected_salary}`,
+          body.referral_source ? `Nguồn: ${body.referral_source}` : '',
+        ]
+          .filter(Boolean)
+          .join('\n'),
+      });
+    } catch (error) {
+      console.error('Telegram document error:', error);
+      // Không trả lỗi kỹ thuật về cho người dùng
+    }
 
     return c.json({ success: true });
   } catch (error) {
     console.error('Job application route error:', error);
+
     return c.json(
       {
         success: false,
-        message: error instanceof Error ? error.message : 'Internal Server Error',
+        message: 'Có lỗi xảy ra khi gửi hồ sơ. Vui lòng thử lại sau.',
       },
       500,
     );
@@ -367,7 +391,14 @@ app.notFound((c) => c.json({ success: false, message: 'Not Found' }, 404));
 
 app.onError((error, c) => {
   console.error('Worker error:', error);
-  return c.json({ success: false, message: error.message || 'Internal Server Error' }, 500);
+
+  return c.json(
+    {
+      success: false,
+      message: 'Có lỗi hệ thống xảy ra. Vui lòng thử lại sau.',
+    },
+    500,
+  );
 });
 
 export default app;

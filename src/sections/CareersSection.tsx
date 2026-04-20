@@ -481,7 +481,8 @@ export function CareersSection({ jobs }: { jobs: JobItem[] }) {
             <form onSubmit={handleSubmitApplication} className="mt-6 space-y-4">
               <div>
                 <label className="mb-2 block text-sm text-white/80">
-                  {locale === 'vi' ? 'Họ và tên' : 'Full name'}
+                  {locale === 'vi' ? 'Họ và tên' : 'Full name'}{' '}
+                  <span className="text-red-400">*</span>
                 </label>
                 <input
                   name="fullName"
@@ -494,7 +495,8 @@ export function CareersSection({ jobs }: { jobs: JobItem[] }) {
 
               <div>
                 <label className="mb-2 block text-sm text-white/80">
-                  {locale === 'vi' ? 'Thông tin liên hệ' : 'Contact information'}
+                  {locale === 'vi' ? 'Thông tin liên hệ' : 'Contact information'}{' '}
+                  <span className="text-red-400">*</span>
                 </label>
                 <input
                   name="phone"
@@ -509,7 +511,8 @@ export function CareersSection({ jobs }: { jobs: JobItem[] }) {
 
               <div>
                 <label className="mb-2 block text-sm text-white/80">
-                  {locale === 'vi' ? 'Mức lương mong muốn (GROSS)' : 'Expected salary (GROSS)'}
+                  {locale === 'vi' ? 'Mức lương mong muốn (GROSS)' : 'Expected salary (GROSS)'}{' '}
+                  <span className="text-red-400">*</span>
                 </label>
                 <input
                   name="expectedSalary"
@@ -541,7 +544,9 @@ export function CareersSection({ jobs }: { jobs: JobItem[] }) {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm text-white/80">CV</label>
+                <label className="mb-2 block text-sm text-white/80">
+                  CV <span className="text-red-400">*</span>
+                </label>
                 <input
                   type="file"
                   name="cvFile"

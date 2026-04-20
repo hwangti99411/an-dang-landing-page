@@ -537,7 +537,7 @@ export function CareersDetailPage() {
                               boxShadow: '0 0 0 0 rgba(242,181,68,0)',
                             }
                       }
-                      className="group flex min-h-[260px] flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-5 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-brand-gold/30 hover:shadow-[0_12px_40px_rgba(242,181,68,0.12)] md:p-6"
+                      className="group flex h-[300px] flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-5 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-brand-gold/30 hover:shadow-[0_12px_40px_rgba(242,181,68,0.12)] md:p-6"
                     >
                       <Link to={`/careers/list/${job.id}`} className="block min-h-0 flex-1">
                         <div className="flex flex-col gap-3 md:gap-4 xl:flex-row xl:items-start xl:justify-between">
@@ -679,7 +679,8 @@ export function CareersDetailPage() {
             <form onSubmit={handleSubmitApplication} className="mt-6 space-y-4">
               <div>
                 <label className="mb-2 block text-sm text-white/80">
-                  {locale === 'vi' ? 'Họ và tên' : 'Full name'}
+                  {locale === 'vi' ? 'Họ và tên' : 'Full name'}{' '}
+                  <span className="text-red-400">*</span>
                 </label>
                 <input
                   name="fullName"
@@ -692,7 +693,8 @@ export function CareersDetailPage() {
 
               <div>
                 <label className="mb-2 block text-sm text-white/80">
-                  {locale === 'vi' ? 'Thông tin liên hệ' : 'Contact information'}
+                  {locale === 'vi' ? 'Thông tin liên hệ' : 'Contact information'}{' '}
+                  <span className="text-red-400">*</span>
                 </label>
                 <input
                   name="phone"
@@ -707,7 +709,8 @@ export function CareersDetailPage() {
 
               <div>
                 <label className="mb-2 block text-sm text-white/80">
-                  {locale === 'vi' ? 'Mức lương mong muốn (GROSS)' : 'Expected salary (GROSS)'}
+                  {locale === 'vi' ? 'Mức lương mong muốn (GROSS)' : 'Expected salary (GROSS)'}{' '}
+                  <span className="text-red-400">*</span>
                 </label>
                 <input
                   name="expectedSalary"
@@ -739,7 +742,9 @@ export function CareersDetailPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm text-white/80">CV</label>
+                <label className="mb-2 block text-sm text-white/80">
+                  CV <span className="text-red-400">*</span>
+                </label>
                 <input
                   type="file"
                   name="cvFile"
