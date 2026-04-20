@@ -1,10 +1,10 @@
 import { motion } from 'framer-motion';
-import { BriefcaseBusiness, MapPin, SearchX, X } from 'lucide-react';
+import { BriefcaseBusiness, ExternalLink, MapPin, SearchX, X } from 'lucide-react';
 import { SectionHeading } from '@/components/SectionHeading';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { JobItem } from '@/types';
 import { Link } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 
 type ApplicationFormState = {
@@ -29,15 +29,21 @@ const API_BASE_URL =
   import.meta.env.VITE_WORKER_API_BASE_URL ||
   'https://an-dang-landing-page.tranhoanghiep0411.workers.dev';
 
+const OFFICE_VIEWER_BASE_URL = 'https://view.officeapps.live.com/op/embed.aspx?src=';
+
 export function CareersSection({ jobs }: { jobs: JobItem[] }) {
   const { locale } = useLanguage();
-  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const [selectedJob, setSelectedJob] = useState<JobItem | null>(null);
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
   const [formData, setFormData] = useState<ApplicationFormState>(initialFormState);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [previewJob, setPreviewJob] = useState<JobItem | null>(null);
+  const [previewUrl, setPreviewUrl] = useState('');
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -47,85 +53,56 @@ export function CareersSection({ jobs }: { jobs: JobItem[] }) {
     return () => clearTimeout(timer);
   }, [jobs]);
 
-  const isIOS = () => {
-    if (typeof navigator === 'undefined') return false;
-    return /iPad|iPhone|iPod/.test(navigator.userAgent);
-  };
+  useEffect(() => {
+    const shouldLockScroll = isApplyModalOpen || isPreviewModalOpen;
+    const originalOverflow = document.body.style.overflow;
 
-  const isAndroid = () => {
-    if (typeof navigator === 'undefined') return false;
-    return /Android/i.test(navigator.userAgent);
-  };
-
-  const downloadFile = async (url: string, fileName: string) => {
-    try {
-      if (isIOS()) {
-        const res = await fetch(url);
-        const blob = await res.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => {
-          window.URL.revokeObjectURL(blobUrl);
-        }, 1000);
-        return;
-      }
-
-      if (isAndroid()) {
-        const a = document.createElement('a');
-        a.href = url;
-        a.target = '_blank';
-        a.rel = 'noopener noreferrer';
-        a.setAttribute('download', fileName);
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        return;
-      }
-
-      const res = await fetch(url);
-      const blob = await res.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(blobUrl);
-    } catch (err) {
-      console.error('Download failed', err);
-      try {
-        const a = document.createElement('a');
-        a.href = url;
-        a.target = '_blank';
-        a.rel = 'noopener noreferrer';
-        a.setAttribute('download', fileName);
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-      } catch (fallbackErr) {
-        console.error('Fallback download failed', fallbackErr);
-      }
+    if (shouldLockScroll) {
+      document.body.style.overflow = 'hidden';
     }
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isApplyModalOpen, isPreviewModalOpen]);
+
+  const getFileExtension = (url: string) => {
+    return url.split('.').pop()?.split('?')[0]?.toLowerCase() || '';
   };
 
-  const normalizeFileName = (str: string) => {
-    return str
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
+  const isPdfFile = (url: string) => getFileExtension(url) === 'pdf';
+
+  const isOfficeFile = (url: string) =>
+    ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(getFileExtension(url));
+
+  const canPreviewInline = (url?: string | null) => {
+    if (!url) return false;
+    return isPdfFile(url) || isOfficeFile(url);
   };
 
-  const getExtension = (url: string) => {
-    return url.split('.').pop()?.split('?')[0] || 'file';
+  const isMobileOrTablet = () => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth < 1024;
   };
+
+  const getDirectViewerUrl = (url: string) => {
+    const encodedUrl = encodeURIComponent(url);
+
+    if (isPdfFile(url)) {
+      return `${url}${url.includes('?') ? '&' : '?'}#toolbar=1&navpanes=0&view=FitH`;
+    }
+
+    if (isOfficeFile(url)) {
+      return `${OFFICE_VIEWER_BASE_URL}${encodedUrl}`;
+    }
+
+    return url;
+  };
+
+  const previewTitle = useMemo(() => {
+    if (!previewJob) return '';
+    return locale === 'vi' ? previewJob.title_vi : previewJob.title_en;
+  }, [locale, previewJob]);
 
   const formatSalaryInput = (value: string) => {
     const numeric = value.replace(/\D/g, '');
@@ -154,6 +131,51 @@ export function CareersSection({ jobs }: { jobs: JobItem[] }) {
     setIsApplyModalOpen(false);
     setSelectedJob(null);
     setFormData(initialFormState);
+  };
+
+  const openJDPreview = (job: JobItem) => {
+    if (!job.jd_file_url) return;
+
+    const title = locale === 'vi' ? job.title_vi : job.title_en;
+    const viewerUrl = getDirectViewerUrl(job.jd_file_url);
+
+    if (!canPreviewInline(job.jd_file_url)) {
+      window.open(job.jd_file_url, '_blank', 'noopener,noreferrer');
+      toast.success(locale === 'vi' ? 'Đã mở JD ở tab mới.' : 'JD has been opened in a new tab.');
+      return;
+    }
+
+    // Mobile / tablet:
+    // - PDF: vẫn mở modal full-screen để xem đẹp
+    // - Office file: mở tab mới để tránh iframe xấu/lỗi trên Safari/Android tablet
+    if (isMobileOrTablet() && isOfficeFile(job.jd_file_url)) {
+      window.open(viewerUrl, '_blank', 'noopener,noreferrer');
+      toast.success(
+        locale === 'vi'
+          ? 'Đã mở JD ở chế độ tối ưu cho thiết bị di động.'
+          : 'JD opened in a mobile-optimized view.',
+      );
+      return;
+    }
+
+    setPreviewJob(job);
+    setPreviewUrl(viewerUrl);
+    setIsPreviewLoading(true);
+    setIsPreviewModalOpen(true);
+
+    toast.success(locale === 'vi' ? `Đang mở JD: ${title}` : `Opening JD: ${title}`);
+  };
+
+  const closeJDPreview = () => {
+    setIsPreviewModalOpen(false);
+    setPreviewJob(null);
+    setPreviewUrl('');
+    setIsPreviewLoading(false);
+  };
+
+  const openJDInNewTab = () => {
+    if (!previewUrl) return;
+    window.open(previewUrl, '_blank', 'noopener,noreferrer');
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -310,7 +332,7 @@ export function CareersSection({ jobs }: { jobs: JobItem[] }) {
             Array.from({ length: 2 }).map((_, index) => (
               <div
                 key={index}
-                className="rounded-[1.75rem] border border-white/10 bg-white/[0.03] p-6 backdrop-blur-md animate-pulse"
+                className="animate-pulse rounded-[1.75rem] border border-white/10 bg-white/[0.03] p-6 backdrop-blur-md"
               >
                 <div className="flex items-center justify-between gap-4">
                   <div className="h-6 w-40 rounded-full bg-white/10" />
@@ -336,7 +358,7 @@ export function CareersSection({ jobs }: { jobs: JobItem[] }) {
               .sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0))
               .slice(0, 4)
               .map((job, index) => {
-                const isDownloading = downloadingId === job.id;
+                const hasJD = !!job.jd_file_url;
 
                 return (
                   <motion.article
@@ -348,11 +370,11 @@ export function CareersSection({ jobs }: { jobs: JobItem[] }) {
                     className="group rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-brand-gold/30 hover:shadow-[0_12px_40px_rgba(242,181,68,0.12)]"
                   >
                     <div className="flex items-start justify-between gap-4">
-                      <h3 className="text-xl font-semibold text-white leading-snug">
+                      <h3 className="text-xl font-semibold leading-snug text-white">
                         {locale === 'vi' ? job.title_vi : job.title_en}
                       </h3>
 
-                      <span className="shrink-0 rounded-full bg-brand-gold/10 px-3 py-1 text-xs uppercase tracking-[0.2em] text-brand-gold border border-brand-gold/20">
+                      <span className="shrink-0 rounded-full border border-brand-gold/20 bg-brand-gold/10 px-3 py-1 text-xs uppercase tracking-[0.2em] text-brand-gold">
                         {locale === 'vi' ? job.type_vi : job.type_en}
                       </span>
                     </div>
@@ -375,39 +397,16 @@ export function CareersSection({ jobs }: { jobs: JobItem[] }) {
                     <div className="mt-6 flex flex-wrap gap-3">
                       <button
                         type="button"
-                        disabled={!job.jd_file_url || isDownloading}
-                        onClick={async () => {
-                          if (!job.jd_file_url || isDownloading) return;
-
-                          setDownloadingId(job.id);
-                          try {
-                            const title = locale === 'vi' ? job.title_vi : job.title_en;
-                            const ext = getExtension(job.jd_file_url);
-                            const fileName = `${normalizeFileName(title)}-job-AnDangTech.${ext}`;
-                            await downloadFile(job.jd_file_url, fileName);
-                          } catch (err) {
-                            console.error(err);
-                          } finally {
-                            setDownloadingId(null);
-                          }
-                        }}
+                        disabled={!hasJD}
+                        onClick={() => openJDPreview(job)}
                         className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 ${
-                          job.jd_file_url
+                          hasJD
                             ? 'bg-brand-gold text-black hover:opacity-90'
                             : 'cursor-not-allowed bg-white/10 text-white/35'
                         }`}
                       >
-                        {isDownloading && (
-                          <span className="h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
-                        )}
-
-                        {isDownloading
-                          ? locale === 'vi'
-                            ? 'Đang tải...'
-                            : 'Downloading...'
-                          : locale === 'vi'
-                            ? 'Xem chi tiết JD'
-                            : 'View detail JD'}
+                        <ExternalLink size={16} />
+                        {locale === 'vi' ? 'Xem chi tiết JD' : 'View detail JD'}
                       </button>
 
                       <button
@@ -459,9 +458,69 @@ export function CareersSection({ jobs }: { jobs: JobItem[] }) {
         )}
       </section>
 
+      {isPreviewModalOpen && previewJob && (
+        <div className="fixed inset-0 z-[1000] bg-black/85">
+          <div className="flex h-[100dvh] w-full items-center justify-center p-0 sm:p-4">
+            <div className="relative flex h-[100dvh] w-full flex-col overflow-hidden bg-[#0f172a] sm:h-[92dvh] sm:max-w-6xl sm:rounded-[1.5rem] sm:border sm:border-white/10 sm:shadow-2xl">
+              <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/10 px-3 py-3 sm:px-5 sm:py-4">
+                <div className="min-w-0">
+                  <h3 className="truncate text-base font-semibold text-white sm:text-lg">
+                    {previewTitle}
+                  </h3>
+                  <p className="mt-1 text-xs text-white/60 sm:text-sm">
+                    {locale === 'vi'
+                      ? 'Xem JD trực tiếp trên web'
+                      : 'Preview JD directly on the web'}
+                  </p>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={openJDInNewTab}
+                    className="inline-flex items-center gap-2 rounded-full border border-brand-gold/30 bg-white/5 px-3 py-2 text-xs font-medium text-white transition-all duration-300 hover:border-brand-gold hover:bg-brand-gold hover:text-black sm:px-4 sm:text-sm"
+                  >
+                    <ExternalLink size={16} />
+                    <span className="hidden sm:inline">
+                      {locale === 'vi' ? 'Mở tab mới' : 'Open new tab'}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={closeJDPreview}
+                    className="rounded-full p-2 text-white/70 transition hover:bg-white/10 hover:text-white"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="relative min-h-0 flex-1 bg-slate-950">
+                {isPreviewLoading && (
+                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-slate-950/90">
+                    <span className="h-8 w-8 animate-spin rounded-full border-2 border-white/60 border-t-transparent" />
+                    <p className="text-sm text-white/70">
+                      {locale === 'vi' ? 'Đang tải JD...' : 'Loading JD...'}
+                    </p>
+                  </div>
+                )}
+
+                <iframe
+                  title={previewTitle || 'Job Description Preview'}
+                  src={previewUrl}
+                  className="h-full w-full"
+                  onLoad={() => setIsPreviewLoading(false)}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {isApplyModalOpen && selectedJob && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/70 px-4 py-6">
-          <div className="relative w-full max-w-lg rounded-[1.5rem] border border-white/10 bg-[#0f172a] p-6 shadow-2xl">
+          <div className="relative w-full max-w-lg rounded-[1.5rem] border border-white/10 bg-[#0f172a] p-5 shadow-2xl sm:p-6">
             <button
               type="button"
               onClick={closeApplyModal}
@@ -470,7 +529,7 @@ export function CareersSection({ jobs }: { jobs: JobItem[] }) {
               <X size={18} />
             </button>
 
-            <h3 className="text-xl font-semibold text-white">
+            <h3 className="pr-10 text-lg font-semibold text-white sm:text-xl">
               {locale === 'vi' ? 'Ứng tuyển vị trí' : 'Apply for position'}
             </h3>
 
