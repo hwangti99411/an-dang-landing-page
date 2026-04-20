@@ -390,6 +390,22 @@ export function CareersSection({ jobs }: { jobs: JobItem[] }) {
                       </span>
                     </div>
 
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {!!(locale === 'vi' ? job.salary_vi : job.salary_en) && (
+                        <span className="rounded-full border border-brand-gold/20 bg-brand-gold/10 px-3 py-1 text-xs text-brand-gold">
+                          {locale === 'vi' ? 'Lương: ' : 'Salary: '}
+                          {locale === 'vi' ? job.salary_vi : job.salary_en}
+                        </span>
+                      )}
+
+                      {!!(locale === 'vi' ? job.experience_vi : job.experience_en) && (
+                        <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/75">
+                          {locale === 'vi' ? 'Kinh nghiệm: ' : 'Experience: '}
+                          {locale === 'vi' ? job.experience_vi : job.experience_en}
+                        </span>
+                      )}
+                    </div>
+
                     <p className="mt-4 text-sm leading-7 text-white/70">
                       {locale === 'vi' ? job.description_vi : job.description_en}
                     </p>

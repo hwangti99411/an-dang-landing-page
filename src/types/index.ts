@@ -108,7 +108,7 @@ export interface Env {
   TELEGRAM_CHAT_ID?: string;
 }
 
-export interface JobItem {
+export type JobItem = {
   id: string;
   title_vi: string;
   title_en: string;
@@ -116,12 +116,15 @@ export interface JobItem {
   location_en: string;
   type_vi: string;
   type_en: string;
+  salary_vi?: string | null;
+  salary_en?: string | null;
+  experience_vi?: string | null;
+  experience_en?: string | null;
   description_vi: string;
   description_en: string;
-  is_active: boolean;
-  created_at?: string;
-  jd_file_url?: string;
-  jd_file_path?: string;
-  apply_url?: string;
-  sort: number;
-}
+  sort?: number | null;
+  is_active?: boolean;
+  jd_file_url?: string | null;
+  jd_file_path?: string | null;
+  apply_url?: string | null;
+};

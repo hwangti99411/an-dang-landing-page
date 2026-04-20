@@ -555,7 +555,7 @@ export function CareersDetailPage() {
                               boxShadow: '0 0 0 0 rgba(242,181,68,0)',
                             }
                       }
-                      className="group flex min-h-[300px] flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-5 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-brand-gold/30 hover:shadow-[0_12px_40px_rgba(242,181,68,0.12)] md:p-6"
+                      className="group flex min-h-[360px] flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-5 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-brand-gold/30 hover:shadow-[0_12px_40px_rgba(242,181,68,0.12)] md:p-6"
                     >
                       <Link to={`/careers/list/${job.id}`} className="block min-h-0 flex-1">
                         <div className="flex flex-col gap-3 md:gap-4 xl:flex-row xl:items-start xl:justify-between">
@@ -577,6 +577,22 @@ export function CareersDetailPage() {
                             <BriefcaseBusiness size={16} />
                             {locale === 'vi' ? job.type_vi : job.type_en}
                           </span>
+                        </div>
+
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          {!!(locale === 'vi' ? job.salary_vi : job.salary_en) && (
+                            <span className="rounded-full border border-brand-gold/20 bg-brand-gold/10 px-3 py-1 text-xs text-brand-gold">
+                              {locale === 'vi' ? 'Lương: ' : 'Salary: '}
+                              {locale === 'vi' ? job.salary_vi : job.salary_en}
+                            </span>
+                          )}
+
+                          {!!(locale === 'vi' ? job.experience_vi : job.experience_en) && (
+                            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/75">
+                              {locale === 'vi' ? 'Kinh nghiệm: ' : 'Experience: '}
+                              {locale === 'vi' ? job.experience_vi : job.experience_en}
+                            </span>
+                          )}
                         </div>
 
                         <div className="mt-4 overflow-hidden">

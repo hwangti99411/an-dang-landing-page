@@ -66,6 +66,10 @@ const defaultRows: Record<CollectionTab, AdminRow> = {
     location_en: '',
     type_vi: '',
     type_en: '',
+    salary_vi: '',
+    salary_en: '',
+    experience_vi: '',
+    experience_en: '',
     description_vi: '',
     description_en: '',
     sort: '',
@@ -86,6 +90,22 @@ const fieldDescriptions: Record<string, { vi: string; en: string }> = {
   sort: {
     vi: 'Thứ tự hiển thị, số nhỏ hơn sẽ hiện trước',
     en: 'Display order, lower number appears first',
+  },
+  salary_vi: {
+    vi: 'Mức lương tiếng Việt',
+    en: 'Salary in Vietnamese',
+  },
+  salary_en: {
+    vi: 'Mức lương tiếng Anh',
+    en: 'Salary in English',
+  },
+  experience_vi: {
+    vi: 'Kinh nghiệm yêu cầu tiếng Việt',
+    en: 'Experience requirement in Vietnamese',
+  },
+  experience_en: {
+    vi: 'Kinh nghiệm yêu cầu tiếng Anh',
+    en: 'Experience requirement in English',
   },
   company_name_vi: {
     vi: 'Tên công ty bằng tiếng Việt',
@@ -1005,6 +1025,17 @@ export function AdminPage() {
                                     : '',
                             )}
                           </div>
+                          {'salary_vi' in row && row.salary_vi && (
+                            <div className="mt-1 text-xs text-brand-gold">
+                              Lương: {String(row.salary_vi)}
+                            </div>
+                          )}
+
+                          {'experience_vi' in row && row.experience_vi && (
+                            <div className="mt-1 text-xs text-white/60">
+                              Kinh nghiệm: {String(row.experience_vi)}
+                            </div>
+                          )}
                           {'cover_url' in row &&
                             typeof row.cover_url === 'string' &&
                             row.cover_url && (
