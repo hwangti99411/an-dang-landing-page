@@ -379,17 +379,6 @@ export function CareersSection({ jobs }: { jobs: JobItem[] }) {
                       </span>
                     </div>
 
-                    <div className="mt-4 flex flex-wrap gap-4 text-sm text-white/65">
-                      <span className="inline-flex items-center gap-2">
-                        <MapPin size={16} />
-                        {locale === 'vi' ? job.location_vi : job.location_en}
-                      </span>
-                      <span className="inline-flex items-center gap-2">
-                        <BriefcaseBusiness size={16} />
-                        {locale === 'vi' ? job.type_vi : job.type_en}
-                      </span>
-                    </div>
-
                     <div className="mt-4 flex flex-wrap gap-2">
                       {!!(locale === 'vi' ? job.salary_vi : job.salary_en) && (
                         <span className="rounded-full border border-brand-gold/20 bg-brand-gold/10 px-3 py-1 text-xs text-brand-gold">
@@ -404,6 +393,17 @@ export function CareersSection({ jobs }: { jobs: JobItem[] }) {
                           {locale === 'vi' ? job.experience_vi : job.experience_en}
                         </span>
                       )}
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap gap-4 text-sm text-white/65">
+                      <span className="inline-flex items-center gap-2">
+                        <MapPin size={16} />
+                        {locale === 'vi' ? job.location_vi : job.location_en}
+                      </span>
+                      {/* <span className="inline-flex items-center gap-2">
+                        <BriefcaseBusiness size={16} />
+                        {locale === 'vi' ? job.type_vi : job.type_en}
+                      </span> */}
                     </div>
 
                     <p className="mt-4 text-sm leading-7 text-white/70">
