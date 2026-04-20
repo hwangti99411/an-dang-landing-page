@@ -29,9 +29,24 @@ export function HeroSection({ settings }: { settings: SiteSettings }) {
   };
 
   return (
-    <section className="relative overflow-hidden bg-hero-grid" id="hero">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(248,191,80,0.14),_transparent_26%),radial-gradient(circle_at_80%_15%,_rgba(221,76,12,0.12),_transparent_24%),radial-gradient(circle_at_60%_90%,_rgba(154,4,10,0.18),_transparent_30%)]" />
-      <div className="relative mx-auto grid min-h-[calc(100vh-80px)] max-w-7xl gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-8">
+    <section className="relative overflow-hidden bg-[#0b0b12]" id="hero">
+      {/* BACKGROUND IMAGE */}
+      <div
+        className="absolute inset-0 bg-no-repeat bg-contain bg-right opacity-85"
+        style={{
+          backgroundImage: "url('/hero-background.png')",
+        }}
+      />
+
+      {/* DARK OVERLAY FOR TEXT */}
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(8,10,20,0.95)_0%,rgba(8,10,20,0.85)_35%,rgba(8,10,20,0.5)_60%,transparent_100%)]" />
+
+      {/* BLEND TO BRAND COLOR (QUAN TRỌNG NHẤT) */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(120,20,10,0.35),transparent_40%),linear-gradient(180deg,transparent_60%,rgba(40,10,8,0.9)_100%)]" />
+
+      {/* CONTENT */}
+      <div className="relative mx-auto grid min-h-[720px] max-w-7xl gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-8">
+        {/* LEFT */}
         <div>
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -40,6 +55,7 @@ export function HeroSection({ settings }: { settings: SiteSettings }) {
           >
             {content.badge}
           </motion.div>
+
           <motion.h1
             initial={{ opacity: 0, y: 22 }}
             animate={{ opacity: 1, y: 0 }}
@@ -48,14 +64,16 @@ export function HeroSection({ settings }: { settings: SiteSettings }) {
           >
             {content.title}
           </motion.h1>
+
           <motion.p
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.65, delay: 0.12 }}
-            className="mt-6 max-w-2xl text-base leading-8 text-white/72 md:text-lg"
+            className="mt-6 max-w-2xl text-base leading-8 text-white/78 md:text-lg"
           >
             {content.description}
           </motion.p>
+
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
@@ -73,6 +91,7 @@ export function HeroSection({ settings }: { settings: SiteSettings }) {
               {content.primary}
               <ArrowRight size={16} />
             </button>
+
             <button
               onClick={() => {
                 document.getElementById('services')?.scrollIntoView({
@@ -86,6 +105,7 @@ export function HeroSection({ settings }: { settings: SiteSettings }) {
             </button>
           </motion.div>
 
+          {/* STATS */}
           <div className="mt-10 grid gap-4 md:grid-cols-3">
             {content.stats.map(([value, label], index) => (
               <motion.div
@@ -93,31 +113,34 @@ export function HeroSection({ settings }: { settings: SiteSettings }) {
                 initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.45, delay: 0.24 + index * 0.08 }}
-                className="glass rounded-3xl p-5"
+                className="glass rounded-3xl p-5 backdrop-blur-md bg-white/5 border border-white/10"
               >
                 <div className="text-2xl font-semibold text-brand-gold">{value}</div>
-                <div className="mt-2 text-sm leading-6 text-white/68">{label}</div>
+                <div className="mt-2 text-sm leading-6 text-white/72">{label}</div>
               </motion.div>
             ))}
           </div>
         </div>
 
+        {/* RIGHT */}
         <motion.div
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, delay: 0.15 }}
           className="relative"
         >
-          <div className="glass relative overflow-hidden rounded-[2rem] border border-brand-gold/10 p-6 shadow-glow">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(248,191,80,0.14),_transparent_28%),radial-gradient(circle_at_bottom_left,_rgba(221,76,12,0.16),_transparent_22%)]" />
+          <div className="glass relative overflow-hidden rounded-[2rem] border border-brand-gold/10 p-6 shadow-glow backdrop-blur-md bg-white/5">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(248,191,80,0.12),_transparent_28%),radial-gradient(circle_at_bottom_left,_rgba(221,76,12,0.14),_transparent_22%)]" />
+
             <div className="relative grid gap-5">
-              <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
                 <div className="flex items-center justify-between text-sm text-white/60">
                   <span>{locale === 'vi' ? 'Năng lực cốt lõi' : 'Core strengths'}</span>
                   <span className="rounded-full bg-emerald-400/15 px-3 py-1 text-xs text-emerald-300">
                     Live
                   </span>
                 </div>
+
                 <div className="mt-5 space-y-3">
                   {['IT Outsourcing', 'Tech Consulting', 'Web / Cloud', 'Admin CMS'].map((item) => (
                     <div
@@ -130,8 +153,9 @@ export function HeroSection({ settings }: { settings: SiteSettings }) {
                   ))}
                 </div>
               </div>
+
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+                <div className="rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
                   <CalendarDays className="text-brand-gold" />
                   <div className="mt-4 text-xl font-semibold text-white">30 phút</div>
                   <div className="mt-2 text-sm text-white/65">
@@ -140,7 +164,8 @@ export function HeroSection({ settings }: { settings: SiteSettings }) {
                       : 'A free consultation session to define your needs, scope, and rollout direction.'}
                   </div>
                 </div>
-                <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+
+                <div className="rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
                   <div className="text-sm uppercase tracking-[0.25em] text-brand-gold">
                     Cloudflare + Supabase
                   </div>

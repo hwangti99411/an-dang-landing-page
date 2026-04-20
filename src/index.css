@@ -27,8 +27,8 @@ body {
   margin: 0;
   min-width: 320px;
   background:
-    radial-gradient(circle at top left, rgba(248, 191, 80, 0.12), transparent 24%),
-    linear-gradient(180deg, #0e0304 0%, #1c090d 48%, #0f0405 100%);
+    radial-gradient(circle at top left, rgba(248, 191, 80, 0.22), transparent 35%),
+    linear-gradient(180deg, #1a0608 0%, #2f0a08 48%, #1a0608 100%);
   color: #f8f7f6;
 }
 
